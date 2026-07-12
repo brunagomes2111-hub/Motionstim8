@@ -1,0 +1,13 @@
+/*! \mainpage ScienceMode Microstim Library 
+ *
+ * \section intro Introduction
+ *
+ * ScienceMode offers a great flexibility for direct external control
+through the serial port. The Stimulator class is a high level C++ 
+interface library to this mode.
+ *
+ *
+ *\author Nils-Otto Negard <negaard@mpi-magdeburg.mpg.de>  
+ * etc...
+ */
+

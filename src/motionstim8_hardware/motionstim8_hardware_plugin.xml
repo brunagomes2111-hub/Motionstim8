@@ -1,0 +1,14 @@
+<library path="motionstim8_hardware">
+
+  <class
+    name="motionstim8_hardware/MotionStim8Hardware"
+    type="motionstim8_hardware::MotionStim8Hardware"
+    base_class_type="hardware_interface::SystemInterface">
+
+    <description>
+      MotionStim8 hardware interface
+    </description>
+
+  </class>
+
+</library>

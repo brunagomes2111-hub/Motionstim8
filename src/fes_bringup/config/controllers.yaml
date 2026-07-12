@@ -1,0 +1,42 @@
+controller_manager:
+  ros__parameters:
+
+    update_rate: 100
+
+    output_scale: 10.0
+
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    ankle_left_controller:
+      type: fes_control/Controller
+
+    ankle_right_controller:
+      type: fes_control/Controller
+
+    knee_left_controller:
+      type: fes_control/Controller
+
+    knee_right_controller:
+      type: fes_control/Controller
+
+
+
+ankle_left_controller:
+  ros__parameters:
+    joint: ankle_left
+   
+
+ankle_right_controller:
+  ros__parameters:
+    joint: ankle_right
+   
+
+knee_left_controller:
+  ros__parameters:
+    joint: knee_left
+  
+
+knee_right_controller:
+  ros__parameters:
+    joint: knee_right

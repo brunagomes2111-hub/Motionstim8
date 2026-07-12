@@ -1,0 +1,177 @@
+ROS2_JAZZY 
+
+Nome do projeto: ros2_ws_2
+
+    Indice:
+
+    ->Arquitetura do projeto e descrição
+    ->Como compilar
+
+    O objetivo deste projeto é implementar uma arquitetura baseada em ROS 2 para o controlo de um sistema de Estimulação Elétrica Funcional (FES), calculando o sinal de controlo através de um controlador PID e enviando os comandos para o estimulador MotionStim8.
+
+    É constituído por cinco packages:
+
+        -control_signals
+        -fes_bringup
+        -fes_control
+        -motionstim8_hardware
+        -motionstim8_driver
+
+
+ros2_ws_2/src/
+|
+|── logs -> informações dos pacientes e os seus resultados experimentais
+|
+|── control_signals -> package responsável por publicar as trajetorias
+│   ├── Angle_Estimation
+│   │   ├── AngleEstimation_node.cpp -> trajetória da posição atual
+│   │   └── include
+│   │       └── control_signals
+│   │           └── AngleEstimation_node.hpp
+│   ├── CMakeLists.txt
+│   ├── Generate_Reference
+│   │   ├── generate_reference_node.cpp -> trajetórias da posição de referência
+│   │   ├── include
+│   │   │   └── control_signals
+│   │   │       ├── generate_reference_node.hpp
+│   │   │       └── trajectories.hpp
+│   │   └── trajectories.cpp
+│   ├── package.xml
+│   └── src
+│       └── control_signals_node.cpp 
+├── fes_bringup -> package reponsável pelo launch e por pedir as configurações ao utilizador
+│   ├── CMakeLists.txt
+│   ├── config
+│   │   ├── controller_gains.yaml (não está a ser utilizado)
+│   │   └── controllers.yaml -> controller das juntas
+│   ├── include
+│   │   └── fes_bringup
+│   │       └── configuration_node.hpp
+│   ├── launch
+│   │   ├── fes_configuration.launch.py -> launch do node de configuração
+│   │   └── motionstim8.launch.py -> launch dos restantes ficheiros
+│   ├── msg
+│   │   └── Configuration.msg -> o que vai ser pedido ao utilizador
+│   ├── package.xml
+│   ├── src
+│   │   └── configuration_node.cpp -> pede ao utilizador as configurações, juntas a controlar, ganhos, modo de controlo, info. pessoais
+│   └── urdf
+│       └── motionstim8.urdf -> tem a atribuição dos valores máximos de alguns parametros
+├── fes_control -> package de controlo
+│   ├── CMakeLists.txt
+│   ├── controller_plugin.xml
+│   ├── include
+│   │   └── fes_control
+│   │       └── Controller.hpp
+│   ├── package.xml
+│   └── src
+│       └── fes_controller.cpp -> calculo do PID em posição ou torque, anti-windup
+├── motionstim8_driver -> package de comunicação com a stimlib, motionstim8
+│   ├── CMakeLists.txt
+│   ├── include
+│   │   └── motionstim8_driver
+│   │       └── motionstim8_driver.hpp
+│   ├── package.xml
+│   ├── src
+│   │   └── motionstim8_driver.cpp
+│   └── third_party
+│       └── stimlib -> biblioteca do motionstim8
+│           ├── doc.cfg
+│           ├── global_list_example.txt
+│           ├── mainfiledoc.doc
+│           ├── motionstim8.cpp 
+│           ├── motionstim8.h
+│           ├── serial_linux.cpp
+│           ├── serial_linux.h
+│           ├── serialport.h
+│           └── single_pulse_example.txt
+└── motionstim8_hardware -> package entre o controlo e o driver 
+    ├── CMakeLists.txt
+    ├── include
+    │   └── motionstim8_hardware
+    │       └── motionstim8_hardware.hpp
+    ├── motionstim8_hardware_plugin.xml
+    ├── package.xml
+    └── src
+        └── motionstim8_hardware.cpp -> neste ficheiro faz-se saturação, atribuição de canais aos agonistas ou antagonistas das juntas
+
+
+    Configuration Node         AngleEstimationNode
+        │                              |
+        ▼                              ▼
+    /configuration              /joint_position
+        │                              |
+        ▼                              ▼
+    FES Controller               FES Controller 
+        │
+    stim_command                GenerateReferenceNode
+        │                              |
+        ▼                              ▼
+    MotionStim8Hardware         /reference_joint_state
+        │                              |
+        ▼                              ▼
+    MotionStim8Driver             FES Controller 
+        │
+        ▼
+    MotionStim8
+
+
+    Compilação e Execução do código:
+
+        Antes da primeira compilação, é necessário fazer o source da instalação do ROS 2 Jazzy:
+
+          -> source /opt/ros/jazzy/setup.bash
+
+        Em seguida, aceder à workspace do projeto:
+
+          -> cd ~/nome_da_pasta/ros2_ws_2
+
+        Compilar todos os packages:
+
+          -> colcon build --symlink-install
+
+        Após a compilação, fazer o source da workspace para disponibilizar os packages e executáveis:
+
+          -> source install/setup.bash
+
+        Caso seja necessário recompilar apenas um package específico, utilizar:
+
+          -> colcon build --packages-select <nome_do_package> --symlink-install
+
+            Por exemplo:
+
+            -> colcon build --packages-select fes_control --symlink-install
+
+        Após a compilação, executar novamente:
+
+            -> source install/setup.bash
+
+        Recompilar todo o projeto:
+
+        Se for necessário recompilar todo o projeto do início, remover os diretórios gerados durante a compilação:
+
+            -> rm -rf build install log
+
+        De seguida, repetir o processo de compilação:
+
+            -> source /opt/ros/jazzy/setup.bash
+            -> colcon build --symlink-install
+            -> source install/setup.bash
+
+        Execução:
+
+        Para iniciar a arquitetura do sistema, executar:
+
+            -> ros2 launch fes_bringup motionstim8.launch.py
+
+        Num novo terminal, fazer o source da workspace:
+
+            -> source ~/BIRD/ros2_ws_2/install/setup.bash
+
+        e executar o nó de configuração:
+    
+            -> ros2 run fes_bringup configuration_node
+
+                            ou
+
+            -> ros2 run fes_bringup fes_configuration.launch.py

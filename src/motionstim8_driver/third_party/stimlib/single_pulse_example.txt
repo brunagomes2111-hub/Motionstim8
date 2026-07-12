@@ -1,0 +1,43 @@
+Single pulse example 1:
+Channel nr: 2, binary value (010) == (Physical channel nr 3)
+Pulse Width: 200, binary (011001000)
+Pulse Amplitude: 120, binary (1111000)
+
+Checksum:2+200+120 = 322 binary (101000010) (Channel Nr + PulseWidth + Current)
+checksum:  5 LSB/Modulo 32) (00010)
+
+           
+Byte 0 -- 1 11 00010  --- (1) start bit, (11) command identity, (00010) checksum
+Byte 1 -- 0 010 xx 01 --- (0) start bit, (01) channel nr. ,(010) Pulse Width 2 MSB 
+                00 (2 bits not in use)  
+byte 2 -- 0 1001000   --- (0) start bit, (1001000) PW 7 LSB
+Byte 3 -- 0 1111000   --- (0) start bit (1111000) Current
+
+
+Byte code (HEX)  E2 21 48 78
+
+                   
+Return value (HEX) C1 -OK      (11 00000 1) (11) Ident Number, (1) Ok 
+	           C0 -> Not Ok(11 00000 0) (11) Ident Number, (0) Not Ok 
+
+------------------------------------------------------------------------
+
+Single pulse example 2:
+
+Channel nr: 5 -- binary value (101) 3 bits
+Pulse Width 221 -- binary value (011011101)  9 bits
+Pulse Amplitude 55 -- binary value (0110111) 7 bits
+
+Chechsum= Pulsewidth+current+ channel nr= 221+55+5=281 --binary (100011001)
+Chechsum: mod(281,32)= 25 -- binary (11001) 5 bits
+
+byte 0 - 1 11 11001  --- (1) start bit, (11) command identity, (11001) checksum
+byte 1 - 0 101 00 01 --- (0) start bit, (01) channel nr. ,(101) Pulse Width 2 MSB
+byte 2 - 0 1011101   --- (0) start bit, (1011101) PW 7 LSB
+byte 3 - 0 0110111   --- (0) start bit, (0110111) Current
+
+
+Byte code (HEX): F9 51 5D 37
+
+Return value (HEX) C1 -OK      (11 00000 1) ---- (11) Ident Number, (1) Ok
+	           C0 -> Not Ok(11 00000 0) ---- (11) Ident Number, (0) Not Ok

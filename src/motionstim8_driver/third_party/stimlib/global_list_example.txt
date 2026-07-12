@@ -1,0 +1,97 @@
+Example global list initialisation 1:
+Main Time=50 ms, coded Main Time = 98 (00001100010)b 
+Group Time=5 ms, coded Group Time= 7  (00111) 
+N_Factor =1;  (001)
+Channels to be stimulated (1, 2, 5) 
+Channel_Stim = (10011) bin  19dec
+Channels with low frequency (5) 
+Channel_Lf =  (10000)bin, 16dec
+
+checksum=Main_Time+Group_Time+Channel_Stim+Channel_Lf+N_Factor
+	= 98+7+19+16+1 =141 , (10001101)bin
+mod(checksum,8)= (101) bin
+
+
+Byte 0 -- 1 00 101 00 -- (0) SB, (00) Ident Nr, (101) Check sum, (00) N_Factor MSB
+Byte 1 -- 0 1 000100  -- (0) SB, (1) Nfactor LSB, (000100) Channel_Stim 6 MSB
+Byte 2 -- 0 11 00010  -- (0) SB, (11) Channel_Stim 2 LSB, (00010) Channel_Lf 5 MSB
+Byte 3 -- 0 000 0000  -- (0) SB, (000) Channel_Lf 3 LSB, (00) Not in use, (00) GT 2MSB 
+byte 4 -- 0 111 0000  -- (0) SB, (111) Group_Time 3 LSB, (0000) Main_Time 4 MSB
+byte 5 -- 0 1100010   -- (0) SB, (1100010) Main_Time 7 LSB
+
+
+Byte Code: (Hex)94 44 62 0 70 62
+
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+
+Main Time:16.5 ms,coded Main_Time= 31 (00000011111)
+Group Time:6.0 ms,coded Group_Time= 9  (01001)
+N_Factor: 2 (010)bin
+Channel to be stimulated {2,3,6,8} 
+Channel_Stim: 166  (10100110)
+Channel with Low frequency {2,3}
+Channel_Lf: 6  (0000110)
+Checksum=Main_Time+Group_Time+Channel_Stim+Channel_Lf+N_Factor
+	= 31+9+166+6+2 = 214 (11010110)bin
+Checksum 3 LSB   (110) bin
+
+Byte 0 -- 1 00 110 01 -- (0) SB, (00) Ident Nr, (101) Check sum, (00) N_Factor MSB
+Byte 1 -- 0 0 101001  -- (0) SB, (1) Nfactor LSB, (101001) Channel_Stim 6 MSB
+Byte 2 -- 0 10 00000  -- (0) SB, (10) Channel_Stim 2 LSB, (00000) Channel_Lf 5 MSB
+Byte 3 -- 0 110 00 01  -- (0) SB, (110) Channel_Lf 3 LSB, (00) Not in use, (01) GT 2MSB 
+byte 4 -- 0 001 0000  -- (0) SB, (001) Group_Time 3 LSB, (0000) Main_Time 4 MSB
+byte 5 -- 0 0011111   -- (0) SB, (0011111) Main_Time 7 LSB
+
+
+
+Byte Code: (Hex) 99 29 40 61 10 1F
+
+------------
+Local parameter update (using the initialisation above)
+Pulse_Width=
+100 (001100100)
+200 (011001000)
+300 (100101100)
+400 (110010000)
+
+Pulse Current=
+52 (0110100)
+55 (0110111)
+72 (1001000)
+92 (1011100)
+
+Mode =
+0  (00)
+2  (10)
+1  (01)
+1  (01)
+
+checksum=100+200+300+400+52+55+72+92+0+2+1+1=1275 (10011111011)
+Check Sum 5 LSB = (11011)
+
+
+Byte 0 -- 1 01 11011  -- (1) SB, (01) Ident Nr, (11011) Check sum
+
+Byte 1 -- 0 00 xxx 00 -- (0) SB, (00) Mode,(xxx)NM ,(00) PulseW 2 MSB
+Byte 2 -- 0 1100100   -- (0) SB, (1100100) PulseW 7 LSB
+Byte 3 ---0 0110100   -- (0) SB, (0110100) Current
+
+Byte 4 -- 0 10 000 01 -- (0) SB, (10) Mode,(xxx)NM ,(01) PulseW 2 MSB
+Byte 5 -- 0 1001000   -- (0) SB, (1001000) PulseW 7 LSB
+Byte 6 -- 0 0110111   -- (0) SB, (0110111) Current
+
+Byte 7 --0 01 000 10  -- (0) SB, (01) Mode,(xxx)NM ,(10) PulseW 2 MSB
+Byte 8 --0 0101100    -- (0) SB, (0101100) PulseW 7 LSB
+Byte 9 --0 1001000    -- (0) SB, (1001000) Current
+
+Byte 10 --0 01 000 11 --(0) SB, (01) Mode,(xxx)NM ,(11) PulseW 2 MSB
+Byte 11 --0 010000    --(0) SB, (010000) PulseW 7 LSB
+Byte 12 --0 1011100   --(0) SB, (10011100) Current
+
+
+Byte Code (Hex) BB - 0 64 34 - 41 48 37 - 22 2C 48 -  23 10 5C
+
+
+
+------------------------------------------------------------------------

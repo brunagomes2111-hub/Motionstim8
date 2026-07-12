@@ -1,0 +1,369 @@
+<robot name="fes_lower_limb_system">
+
+  <!-- ========================= -->
+  <!-- LINKS -->
+  <!-- ========================= -->
+
+  <link name="world"/>
+
+  <link name="pelvis_link">
+
+    <visual>
+      <geometry>
+        <box size="0.25 0.20 0.10"/>
+      </geometry>
+
+      <material name="gray">
+        <color rgba="0.5 0.5 0.5 1"/>
+      </material>
+
+    </visual>
+
+  </link>
+
+
+  <!-- LEFT LEG -->
+
+  <link name="left_thigh_link">
+
+    <visual>
+
+      <origin
+        xyz="0 0 -0.2"
+        rpy="1.5708 0 0"/>
+
+      <geometry>
+        <cylinder radius="0.05" length="0.4"/>
+      </geometry>
+
+      <material name="blue">
+        <color rgba="0 0 1 1"/>
+      </material>
+
+    </visual>
+
+  </link>
+
+
+  <link name="left_shank_link">
+
+    <visual>
+
+      <origin
+        xyz="0 0 -0.2"
+        rpy="1.5708 0 0"/>
+
+      <geometry>
+        <cylinder radius="0.045" length="0.4"/>
+      </geometry>
+
+      <material name="green">
+        <color rgba="0 1 0 1"/>
+      </material>
+
+    </visual>
+
+  </link>
+
+
+  <link name="left_foot_link">
+
+    <visual>
+
+      <origin xyz="0.1 0 0"/>
+
+      <geometry>
+        <box size="0.2 0.08 0.04"/>
+      </geometry>
+
+      <material name="red">
+        <color rgba="1 0 0 1"/>
+      </material>
+
+    </visual>
+
+  </link>
+
+
+  <!-- RIGHT LEG -->
+
+  <link name="right_thigh_link">
+
+    <visual>
+
+      <origin
+        xyz="0 0 -0.2"
+        rpy="1.5708 0 0"/>
+
+      <geometry>
+        <cylinder radius="0.05" length="0.4"/>
+      </geometry>
+
+      <material name="blue">
+        <color rgba="0 0 1 1"/>
+      </material>
+
+    </visual>
+
+  </link>
+
+
+  <link name="right_shank_link">
+
+    <visual>
+
+      <origin
+        xyz="0 0 -0.2"
+        rpy="1.5708 0 0"/>
+
+      <geometry>
+        <cylinder radius="0.045" length="0.4"/>
+      </geometry>
+
+      <material name="green">
+        <color rgba="0 1 0 1"/>
+      </material>
+
+    </visual>
+
+  </link>
+
+
+  <link name="right_foot_link">
+
+    <visual>
+
+      <origin xyz="0.1 0 0"/>
+
+      <geometry>
+        <box size="0.2 0.08 0.04"/>
+      </geometry>
+
+      <material name="red">
+        <color rgba="1 0 0 1"/>
+      </material>
+
+    </visual>
+
+  </link>
+
+
+  <!-- ========================= -->
+  <!-- JOINTS -->
+  <!-- ========================= -->
+
+  <joint name="base_joint" type="fixed">
+
+    <parent link="world"/>
+    <child link="pelvis_link"/>
+
+  </joint>
+
+
+  <!-- LEFT LEG -->
+
+  <joint name="hip_left" type="revolute">
+
+    <parent link="pelvis_link"/>
+    <child link="left_thigh_link"/>
+
+    <origin xyz="0 0.1 0"/>
+
+    <axis xyz="0 1 0"/>
+
+    <limit
+      lower="-1.57"
+      upper="1.57"
+      effort="100"
+      velocity="1.0"/>
+
+  </joint>
+
+
+  <joint name="knee_left" type="revolute">
+
+    <parent link="left_thigh_link"/>
+    <child link="left_shank_link"/>
+
+    <origin xyz="0 0 -0.4"/>
+
+    <axis xyz="0 1 0"/>
+
+    <limit
+      lower="-1.57"
+      upper="0.0"
+      effort="100"
+      velocity="1.0"/>
+
+  </joint>
+
+
+  <joint name="ankle_left" type="revolute">
+
+    <parent link="left_shank_link"/>
+    <child link="left_foot_link"/>
+
+    <origin xyz="0 0 -0.4"/>
+
+    <axis xyz="0 1 0"/>
+
+    <limit
+      lower="-0.5"
+      upper="0.5"
+      effort="100"
+      velocity="1.0"/>
+
+  </joint>
+
+
+  <!-- RIGHT LEG -->
+
+  <joint name="hip_right" type="revolute">
+
+    <parent link="pelvis_link"/>
+    <child link="right_thigh_link"/>
+
+    <origin xyz="0 -0.1 0"/>
+
+    <axis xyz="0 1 0"/>
+
+    <limit
+      lower="-1.57"
+      upper="1.57"
+      effort="100"
+      velocity="1.0"/>
+
+  </joint>
+
+
+  <joint name="knee_right" type="revolute">
+
+    <parent link="right_thigh_link"/>
+    <child link="right_shank_link"/>
+
+    <origin xyz="0 0 -0.4"/>
+
+    <axis xyz="0 1 0"/>
+
+    <limit
+      lower="-1.57"
+      upper="0.0"
+      effort="100"
+      velocity="1.0"/>
+
+  </joint>
+
+
+  <joint name="ankle_right" type="revolute">
+
+    <parent link="right_shank_link"/>
+    <child link="right_foot_link"/>
+
+    <origin xyz="0 0 -0.4"/>
+
+    <axis xyz="0 1 0"/>
+
+    <limit
+      lower="-0.5"
+      upper="0.5"
+      effort="100"
+      velocity="1.0"/>
+
+  </joint>
+
+
+  <!-- ========================= -->
+  <!-- ROS2 CONTROL -->
+  <!-- ========================= -->
+
+  <ros2_control
+    name="MotionStim8Control"
+    type="system">
+
+    <hardware>
+
+      <plugin>motionstim8_hardware/MotionStim8Hardware</plugin>
+
+      <param name="serial_port">/dev/ttyUSB0</param>
+      <param name="simulation_mode">true</param>
+
+      <param name="main_time">65.0</param>
+
+      <param name="group_time">25.0</param>
+
+      <param name="n_factor">0</param>
+
+    </hardware>
+
+
+    <!-- KNEE LEFT -->
+    <joint name="knee_left">
+
+      <command_interface name="stim_command"/>
+      <state_interface name="position"/>
+
+      <param name="agonist_pw_max">300</param>
+      <param name="antagonist_pw_max">300</param>
+
+      <param name="agonist_current">35</param>
+      <param name="antagonist_current">35</param>
+
+      <param name="agonist_channel">7</param>
+      <param name="antagonist_channel">8</param>
+
+    </joint>
+
+    <!-- ANKLE LEFT -->
+    <joint name="ankle_left">
+
+      <command_interface name="stim_command"/>
+      <state_interface name="position"/>
+
+      <param name="agonist_pw_max">150</param>
+      <param name="antagonist_pw_max">150</param>
+
+      <param name="agonist_current">20</param>
+      <param name="antagonist_current">20</param>
+
+      <param name="agonist_channel">0</param>
+      <param name="antagonist_channel">1</param>
+
+    </joint>
+
+    <!-- KNEE RIGHT -->
+    <joint name="knee_right">
+
+      <command_interface name="stim_command"/>
+      <state_interface name="position"/>
+
+      <param name="agonist_pw_max">300</param>
+      <param name="antagonist_pw_max">300</param>
+
+      <param name="agonist_current">35</param>
+      <param name="antagonist_current">35</param>
+
+      <param name="agonist_channel">3</param>
+      <param name="antagonist_channel">4</param>
+
+    </joint>
+
+    <!-- ANKLE RIGHT -->
+    <joint name="ankle_right">
+
+      <command_interface name="stim_command"/>
+      <state_interface name="position"/>
+
+      <param name="agonist_pw_max">370</param>
+      <param name="antagonist_pw_max">250</param>
+
+      <param name="agonist_current">30</param>
+      <param name="antagonist_current">30</param>
+
+      <param name="agonist_channel">1</param>
+      <param name="antagonist_channel">2</param>
+
+    </joint>
+
+  </ros2_control>
+
+</robot>
