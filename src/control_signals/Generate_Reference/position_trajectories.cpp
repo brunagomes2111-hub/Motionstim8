@@ -1,5 +1,5 @@
 
-#include "control_signals/trajectories.hpp"
+#include "control_signals/position_trajectories.hpp"
 
 namespace WRF {
 
@@ -7,7 +7,7 @@ namespace WRF {
 //////////////////////////////// Right Hip ////////////////////////////////////////////////
 
 //sub 3 IL Hip traj
-float Healthy_RH[TrajectoryLength] ={
+float Healthy_RH[PositionTrajectoryLength] ={
 
     1.9636818e+01,   1.9398182e+01,   1.7893636e+01,   1.5368182e+01,
     1.3147727e+01,   1.0466818e+01,   8.4968182e+00,   7.2586364e+00,
@@ -27,7 +27,7 @@ float Healthy_RH[TrajectoryLength] ={
 
 
 ////Knee Extension subject 3 IL Men
-float Healthy_RK[TrajectoryLength] ={
+float Healthy_RK[PositionTrajectoryLength] ={
 
    1.2566957e+01,   1.3441739e+01,   1.2174783e+01,   1.3728696e+01,
     1.5154348e+01,   1.5845217e+01,   1.4573478e+01,   1.3136522e+01,
@@ -47,7 +47,7 @@ float Healthy_RK[TrajectoryLength] ={
 
 
 // Right Ankle IL Men
-float Healthy_RA[TrajectoryLength] ={
+float Healthy_RA[PositionTrajectoryLength] ={
   -3.6508696e+00,  -3.5213043e+00,  -4.7486957e+00,  -6.2595652e+00,
     -6.2691304e+00,  -4.8486957e+00,  -3.1200000e+00,  -1.9913043e+00,
     -9.4347826e-01,  -4.2869565e-01,   3.3652174e-01,   9.5000000e-01,
@@ -65,7 +65,7 @@ float Healthy_RA[TrajectoryLength] ={
 //////////////////////////////// Left Hip ////////////////////////////////////////////////
 
 //sub 3 IL Hip traj
-float Healthy_LH[TrajectoryLength] ={
+float Healthy_LH[PositionTrajectoryLength] ={
 
     1.9636818e+01,   1.9398182e+01,   1.7893636e+01,   1.5368182e+01,
     1.3147727e+01,   1.0466818e+01,   8.4968182e+00,   7.2586364e+00,
@@ -84,7 +84,7 @@ float Healthy_LH[TrajectoryLength] ={
 
 
 //////Knee Extension subject 3 IL men
-float Healthy_LK[TrajectoryLength] ={
+float Healthy_LK[PositionTrajectoryLength] ={
 
    1.2566957e+01,   1.3441739e+01,   1.2174783e+01,   1.3728696e+01,
     1.5154348e+01,   1.5845217e+01,   1.4573478e+01,   1.3136522e+01,
@@ -104,7 +104,7 @@ float Healthy_LK[TrajectoryLength] ={
 
 //////////////////////////////// Left Ankle ////////////////////////////////////////////////
 
-    float Healthy_LA[TrajectoryLength] ={
+    float Healthy_LA[PositionTrajectoryLength] ={
       -3.6508696e+00,  -3.5213043e+00,  -4.7486957e+00,  -6.2595652e+00,
         -6.2691304e+00,  -4.8486957e+00,  -3.1200000e+00,  -1.9913043e+00,
         -9.4347826e-01,  -4.2869565e-01,   3.3652174e-01,   9.5000000e-01,
@@ -119,5 +119,5 @@ float Healthy_LK[TrajectoryLength] ={
         1.0887391e+01,   6.3752174e+00,   2.5721739e+00,   4.7652174e-01,  -1.8534783e+00};
 
 
-
+        
 }

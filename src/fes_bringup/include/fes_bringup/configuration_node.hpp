@@ -20,16 +20,6 @@ namespace fes_bringup
 
        private:
 
-            bool activateSelectedControllers();
-
-            rclcpp::Client<controller_manager_msgs::srv::SwitchController>::SharedPtr switch_client_;
-
-            int getJointSelection();
-
-            int getControlModeSelection();
-
-            double getGain(const std::string & name);
-
             std::string getPatientName();
             std::string getSex();
 
@@ -37,6 +27,20 @@ namespace fes_bringup
 
             double getHeight();
             double getWeight();
+
+            int getControlModeSelection();
+
+            bool getCoactivationEnabled();
+
+            double getCoactivationLevel();
+
+            double getGain(const std::string & name);
+
+            bool activateSelectedControllers();
+
+            rclcpp::Client<controller_manager_msgs::srv::SwitchController>::SharedPtr switch_client_;
+
+            int getJointSelection();
             
             std::string currentDate();
 

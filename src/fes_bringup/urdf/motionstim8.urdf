@@ -302,14 +302,23 @@
       <command_interface name="stim_command"/>
       <state_interface name="position"/>
 
-      <param name="agonist_pw_max">300</param>
-      <param name="antagonist_pw_max">300</param>
+      <param name="extension_pw_max">300</param>
+      <param name="flexion_pw_max">300</param>
 
-      <param name="agonist_current">35</param>
-      <param name="antagonist_current">35</param>
+      <param name="extension_pw">300</param>
+      <param name="flexion_pw">300</param>
 
-      <param name="agonist_channel">7</param>
-      <param name="antagonist_channel">8</param>
+      <param name="extension_current">35</param>
+      <param name="flexion_current">35</param>
+
+      <param name="flexion_m_pw_cc">1.155</param>
+      <param name="extension_m_pw_cc">-0.48</param>
+
+     <param name="flexion_b_pw_cc">68.55</param>
+      <param name="extension_b_pw_cc">38.7</param>
+
+      <param name="extension_channel">7</param>
+      <param name="flexion_channel">8</param>
 
     </joint>
 
@@ -319,14 +328,23 @@
       <command_interface name="stim_command"/>
       <state_interface name="position"/>
 
-      <param name="agonist_pw_max">150</param>
-      <param name="antagonist_pw_max">150</param>
+      <param name="extension_pw_max">300</param>
+      <param name="flexion_pw_max">300</param>
 
-      <param name="agonist_current">20</param>
-      <param name="antagonist_current">20</param>
+      <param name="extension_pw">300</param>
+      <param name="flexion_pw">300</param>
 
-      <param name="agonist_channel">0</param>
-      <param name="antagonist_channel">1</param>
+      <param name="extension_current">20</param>
+      <param name="flexion_current">20</param>
+
+      <param name="flexion_m_pw_cc">0.54</param>
+      <param name="extension_m_pw_cc">0.96</param>
+
+     <param name="flexion_b_pw_cc">29.7</param>
+      <param name="extension_b_pw_cc">97.2</param>
+
+      <param name="extension_channel">0</param>
+      <param name="flexion_channel">1</param>
 
     </joint>
 
@@ -336,14 +354,23 @@
       <command_interface name="stim_command"/>
       <state_interface name="position"/>
 
-      <param name="agonist_pw_max">300</param>
-      <param name="antagonist_pw_max">300</param>
+      <param name="extension_pw_max">300</param>
+      <param name="flexion_pw_max">300</param>
 
-      <param name="agonist_current">35</param>
-      <param name="antagonist_current">35</param>
+      <param name="extension_pw">300</param>
+      <param name="flexion_pw">300</param>
 
-      <param name="agonist_channel">3</param>
-      <param name="antagonist_channel">4</param>
+      <param name="extension_current">35</param>
+      <param name="flexion_current">35</param>
+
+      <param name="flexion_m_pw_cc">1.155</param>
+      <param name="extension_m_pw_cc">-0.48</param>
+
+     <param name="flexion_b_pw_cc">68.55</param>
+      <param name="extension_b_pw_cc">38.7</param>
+
+      <param name="extension_channel">3</param>
+      <param name="flexion_channel">4</param>
 
     </joint>
 
@@ -353,14 +380,23 @@
       <command_interface name="stim_command"/>
       <state_interface name="position"/>
 
-      <param name="agonist_pw_max">370</param>
-      <param name="antagonist_pw_max">250</param>
+      <param name="extension_pw_max">500</param>
+      <param name="flexion_pw_max">200</param>
+      
+      <param name="extension_pw">300</param>
+      <param name="flexion_pw">200</param>
 
-      <param name="agonist_current">30</param>
-      <param name="antagonist_current">30</param>
+      <param name="extension_current">30</param>
+      <param name="flexion_current">30</param>
 
-      <param name="agonist_channel">1</param>
-      <param name="antagonist_channel">2</param>
+      <param name="flexion_m_pw_cc">0.54</param>
+      <param name="extension_m_pw_cc">0.96</param>
+
+     <param name="flexion_b_pw_cc">29.7</param>
+      <param name="extension_b_pw_cc">97.2</param>
+
+      <param name="extension_channel">1</param>
+      <param name="flexion_channel">2</param>
 
     </joint>
 

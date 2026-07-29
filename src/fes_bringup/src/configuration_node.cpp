@@ -8,6 +8,7 @@
 #include <ctime>
 #include <sstream>
 #include <iomanip>
+#include <cctype>
 
 namespace fes_bringup
 {
@@ -43,7 +44,7 @@ namespace fes_bringup
             RCLCPP_INFO(get_logger(),"Age:");
             configuration_.age = getAge();
 
-            RCLCPP_INFO(get_logger(),"Height (m):");
+            RCLCPP_INFO(get_logger(),"Height (cm):");
             configuration_.height = getHeight();
 
             RCLCPP_INFO(get_logger(),"Weight (kg):");
@@ -56,6 +57,32 @@ namespace fes_bringup
             RCLCPP_INFO(get_logger(),"Existing patient found.");
         }
 
+        RCLCPP_INFO(get_logger(), "Select control mode:");
+        RCLCPP_INFO(get_logger(), " 1 - Position");
+        RCLCPP_INFO(get_logger(), " 2 - Torque ");
+        
+        int control_mode = getControlModeSelection();
+
+        switch (control_mode)
+        {
+        case 1:
+            configuration_.control_mode = "position";
+            break;
+
+        case 2:
+            configuration_.control_mode = "torque";
+            break;
+        
+        default:
+            throw std::runtime_error("Invalid control mode selected");
+        }
+
+
+        // coactivation
+        RCLCPP_INFO(get_logger(),"Activate coactivation? (Y/N):");
+        configuration_.coactivation_enabled = getCoactivationEnabled();
+
+       
         // Perguntar ao utilizador
         RCLCPP_INFO(get_logger(), "Available joints:");
         
@@ -67,6 +94,7 @@ namespace fes_bringup
         RCLCPP_INFO(get_logger(), "0 - Finish selection.\n");
 
 
+        
         while(!finished_selection)
         {
             int selected_joint = getJointSelection();
@@ -112,55 +140,38 @@ namespace fes_bringup
             }
         }
 
-            RCLCPP_INFO(get_logger(), "Select control mode:");
-            RCLCPP_INFO(get_logger(), " 1 - Position");
-            RCLCPP_INFO(get_logger(), " 2 - Torque ");
-            
-            int control_mode = getControlModeSelection();
 
-            switch (control_mode)
-            {
-            case 1:
-                configuration_.control_mode = "position";
-                break;
 
-            case 2:
-                configuration_.control_mode = "torque";
-                break;
-            
-            default:
-                throw std::runtime_error("Invalid control mode selected");
-            }
+        RCLCPP_INFO(get_logger(), "Enter Kp gain:");
+        configuration_.kp = getGain("Kp");
+        RCLCPP_INFO(get_logger(), "Enter Ki gain:");
+        configuration_.ki = getGain("Ki");
+        RCLCPP_INFO(get_logger(), "Enter Kd gain:");
+        configuration_.kd = getGain("Kd");
 
-            if (!activateSelectedControllers())
-            {
-                RCLCPP_ERROR(get_logger(), "Failed to activate controllers.");
-                return;
-            }
 
-            RCLCPP_INFO(get_logger(), "Enter Kp gain:");
-            configuration_.kp = getGain("Kp");
-            RCLCPP_INFO(get_logger(), "Enter Ki gain:");
-            configuration_.ki = getGain("Ki");
-            RCLCPP_INFO(get_logger(), "Enter Kd gain:");
-            configuration_.kd = getGain("Kd");
+        rclcpp::sleep_for(std::chrono::milliseconds(500));
 
-            rclcpp::sleep_for(std::chrono::milliseconds(200));
+        createTrialDirectory();
 
-            createTrialDirectory();
+        saveExperimentInfo();
 
-            saveExperimentInfo();
+        if (!activateSelectedControllers())
+        {
+            RCLCPP_ERROR(get_logger(), "Failed to activate controllers.");
+            return;
+        }
 
-            configuration_publisher_->publish(configuration_);
+        configuration_publisher_->publish(configuration_);
 
-            RCLCPP_INFO(get_logger(), "Configuration published.");
-            
-            for (const auto & joint : configuration_.joints)
-            {
-                RCLCPP_INFO(get_logger(), "Joint: %s", joint.c_str());
-            }
+        RCLCPP_INFO(get_logger(), "Configuration published.");
+        
+        for (const auto & joint : configuration_.joints)
+        {
+            RCLCPP_INFO(get_logger(), "Joint: %s", joint.c_str());
+        }
 
-            RCLCPP_INFO(get_logger(),"Control mode: %s",configuration_.control_mode.c_str());
+        RCLCPP_INFO(get_logger(),"Control mode: %s",configuration_.control_mode.c_str());
    
     }
 
@@ -279,7 +290,7 @@ namespace fes_bringup
 
         while (true)
         {
-            std::cout << "Height (m): ";
+            std::cout << "Height (cm): ";
 
             if (std::cin >> patient_height && patient_height > 0.0)
             {
@@ -374,6 +385,31 @@ namespace fes_bringup
         }
     }
 
+    bool ConfigurationNode::getCoactivationEnabled()
+    {
+        char option;
+
+        while (true)
+        {
+            std::cout << "Option (Y/N): ";
+
+            std::cin >> option;
+
+            option = std::tolower(option);
+
+            if (option == 'y')
+                return true;
+
+            if (option == 'n')
+                return false;
+
+            RCLCPP_ERROR(get_logger(), "Invalid option.");
+        }
+    }
+
+
+
+
     bool ConfigurationNode::patientExists(const std::string &name)
     {
         return std::filesystem::exists("logs/" + name);
@@ -391,7 +427,7 @@ namespace fes_bringup
         file << "Name: " << configuration_.patient_name << "\n";
         file << "Sex: " << configuration_.sex << "\n";
         file << "Age: " << configuration_.age << "\n";
-        file << "Height: " << configuration_.height << " m\n";
+        file << "Height: " << configuration_.height << " cm\n";
         file << "Weight: " << configuration_.weight << " kg\n";
     }
 
@@ -459,15 +495,13 @@ namespace fes_bringup
         std::filesystem::create_directories(configuration_.log_directory);
     }
 
+    
+
     void ConfigurationNode::saveExperimentInfo()
     {
-        std::ofstream file(
-            configuration_.log_directory +
-            "/experiment_info.txt");
+        std::ofstream file(configuration_.log_directory +"/experiment_info.txt");
 
-        file << "Control mode: "
-            << configuration_.control_mode
-            << "\n\n";
+        file << "Control mode: "<< configuration_.control_mode<< "\n\n";
 
         file << "Selected joints\n";
 
@@ -483,6 +517,13 @@ namespace fes_bringup
         file << "Kp: " << configuration_.kp << "\n";
         file << "Ki: " << configuration_.ki << "\n";
         file << "Kd: " << configuration_.kd << "\n";
+
+        file << "\nCoactivation\n";
+
+        file << "Enabled: "<< (configuration_.coactivation_enabled ? "Yes" : "No")<< "\n";
+
+    
+
     }
 }
 
@@ -493,6 +534,10 @@ int main(int argc, char **argv)
     auto node = std::make_shared<fes_bringup::ConfigurationNode>();
     
     node->configureSystem();
+
+    rclcpp::spin_some(node);
+
+    rclcpp::sleep_for(std::chrono::seconds(1));
 
     rclcpp::shutdown();
 

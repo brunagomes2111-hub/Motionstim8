@@ -14,6 +14,7 @@ find_package(rclcpp REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(hardware_interface REQUIRED)
 find_package(motionstim8_driver REQUIRED)
+find_package(fes_bringup REQUIRED)
 
 #
 # Hardware interface
@@ -42,6 +43,7 @@ ament_target_dependencies(
   pluginlib
   hardware_interface
   motionstim8_driver
+  fes_bringup
 )
 
 pluginlib_export_plugin_description_file(

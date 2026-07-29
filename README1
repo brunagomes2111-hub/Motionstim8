@@ -1,0 +1,166 @@
+# MotionStim8 ROS2
+
+## Descrição
+
+Este projeto implementa uma arquitetura em **ROS 2 Jazzy** para um sistema de **Estimulação Elétrica Funcional (FES)** utilizando o estimulador **MotionStim8**.
+
+A arquitetura foi desenvolvida de forma modular, separando a configuração do sistema, a geração de referências, o algoritmo de controlo e a comunicação com o hardware.
+
+O projeto utiliza o framework **ros2_control**, permitindo desacoplar o controlador da interface física do estimulador.
+
+---
+
+# Estrutura do projeto
+
+```
+src
+├── control_signals
+├── fes_bringup
+├── fes_control
+├── motionstim8_driver
+└── motionstim8_hardware
+```
+
+Cada package possui uma função específica.
+
+---
+
+# control_signals
+
+Responsável pela geração dos sinais utilizados pelo controlador.
+
+### Generate_Reference
+
+Contém o `GenerateReferenceNode`, responsável por:
+
+- gerar trajetórias de referência;
+- publicar referências articulares de posição;
+- publicar referências de torque.
+
+As trajetórias encontram-se implementadas em:
+
+- `position_trajectories.cpp`
+- `torque_trajectories.cpp`
+
+### Angle_Estimation
+
+Contém o `AngleEstimationNode`, responsável pela estimação/publicação da posição das articulações. 
+
+### Torque_Estimation
+
+Contém o `TorqueEstimationNode`, responsável pela estimação do torque articular.
+
+---
+
+# fes_control
+
+Implementa o controlador utilizado pelo `ros2_control`.
+
+O controlador é responsável por:
+
+- receber a referência pretendida;
+- receber o estado atual da articulação;
+- calcular o erro;
+- executar o controlador PID;
+- normalizar o comando para o intervalo [-1,1];
+- escrever o comando na `command_interface`.
+
+Atualmente o sistema suporta:
+
+- controlo em posição (implementado);
+- controlo em torque (estrutura preparada para implementação futura).
+
+---
+
+# motionstim8_hardware
+
+Implementa a Hardware Interface do MotionStim8.
+
+É responsável por:
+
+- exportar as `state_interfaces`;
+- exportar as `command_interfaces`;
+- converter os comandos normalizados provenientes do controlador;
+- selecionar o músculo agonista ou antagonista;
+- preparar os parâmetros de estimulação;
+- comunicar com o driver.
+
+---
+
+# motionstim8_driver
+
+Implementa a comunicação de baixo nível com o MotionStim8.
+
+Este package encapsula a biblioteca **stimlib** e é responsável por:
+
+- estabelecer a comunicação série;
+- inicializar o estimulador;
+- construir os pacotes de comunicação;
+- enviar os comandos para o dispositivo.
+
+---
+
+# fes_bringup
+
+Contém toda a configuração do sistema.
+
+Inclui:
+
+- ficheiros Launch;
+- configuração dos controladores;
+- ganhos PID;
+- modelo URDF;
+- mensagem `Configuration`;
+- `ConfigurationNode`.
+
+Este package centraliza todos os parâmetros necessários para executar o sistema.
+
+---
+
+# Fluxo do sistema
+
+O fluxo geral de funcionamento é o seguinte:
+
+```
+GenerateReferenceNode
+          │
+          ▼
+AngleEstimationNode
+          │
+          ▼
+     Controller
+       (PID)
+          │
+          ▼
+ MotionStim8Hardware
+          │
+          ▼
+ MotionStim8Driver
+          │
+          ▼
+    MotionStim8
+```
+
+---
+
+# Organização da arquitetura
+
+A arquitetura segue uma abordagem modular, onde cada package possui apenas uma responsabilidade.
+
+
+
+ control_signals - Geração de referências e estimação de estados 
+ fes_control - Algoritmo de controlo 
+ motionstim8_hardware - Interface entre o controlador e o hardware 
+ motionstim8_driver - Comunicação com o MotionStim8 
+ fes_bringup - Configuração do sistema 
+
+Esta separação facilita a manutenção, reutilização e extensão do projeto.
+
+---
+
+# Notas
+
+Este README apresenta apenas a organização geral do projeto.
+
+As instruções de instalação, compilação e execução encontram-se descritas no documento **code_guide**.

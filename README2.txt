@@ -7,87 +7,226 @@ Este ficheiro contem:
 
 workspace: ros2_ws_2
 
-Existem cinco packages:
+ros2_ws_2/src/
+│
+├── logs -> informações dos pacientes e respetivos resultados experimentais
+│
+├── control_signals -> package responsável pela geração das referências e estimação dos estados articulares
+│   ├── Angle_Estimation
+│   │   ├── AngleEstimation_node.cpp -> publica a posição atual das articulações (atualmente simulada através de uma sinusoide)
+│   │   └── include
+│   │       └── control_signals
+│   │           └── AngleEstimation_node.hpp
+│   ├── CMakeLists.txt
+│   ├── Generate_Reference
+│   │   ├── generate_reference_node.cpp -> publica as trajetórias de referência de posição e de torque
+│   │   ├── include
+│   │   │   └── control_signals
+│   │   │       ├── generate_reference_node.hpp
+│   │   │       ├── position_trajectories.hpp -> cabeçalho das trajetórias de posição
+│   │   │       └── torque_trajectories.hpp -> cabeçalho das trajetórias de torque
+│   │   ├── position_trajectories.cpp -> implementação das trajetórias de posição
+│   │   └── torque_trajectories.cpp -> implementação das trajetórias de torque
+│   ├── package.xml
+│   ├── src
+│   │   └── control_signals_node.cpp -> executa os nós de geração de referências e estimação
+│   └── Torque_Estimation
+│       ├── include
+│       │   └── control_signals
+│       │       └── torque_estimation_node.hpp
+│       └── torque_estimation_node.cpp -> publica/estima o torque articular
+│
+├── fes_bringup -> package responsável pela configuração do sistema e lançamento da arquitetura
+│   ├── CMakeLists.txt
+│   ├── config
+│   │   ├── controller_gains.yaml -> ficheiro de ganhos PID (atualmente não utilizado)
+│   │   └── controllers.yaml -> configuração dos controladores do ros2_control
+│   ├── include
+│   │   └── fes_bringup
+│   │       └── configuration_node.hpp
+│   ├── launch
+│   │   ├── fes_configuration.launch.py -> launch do ConfigurationNode
+│   │   └── motionstim8.launch.py -> launch da restante arquitetura
+│   ├── msg
+│   │   └── Configuration.msg -> mensagem utilizada para configurar o sistema
+│   ├── package.xml
+│   ├── src
+│   │   └── configuration_node.cpp -> solicita ao utilizador as configurações, cria os diretórios dos ensaios e publica a configuração
+│   └── urdf
+│       └── motionstim8.urdf -> descrição do hardware e parâmetros de estimulação
+│
+├── fes_control -> package responsável pelo algoritmo de controlo
+│   ├── CMakeLists.txt
+│   ├── controller_plugin.xml -> plugin do ros2_control
+│   ├── include
+│   │   └── fes_control
+│   │       └── Controller.hpp
+│   ├── package.xml
+│   └── src
+│       └── fes_controller.cpp -> implementação do controlador PID, anti-windup e registo dos resultados
+│
+├── motionstim8_driver -> package responsável pela comunicação de baixo nível com o MotionStim8 através da stimlib
+│   ├── CMakeLists.txt
+│   ├── include
+│   │   └── motionstim8_driver
+│   │       └── motionstim8_driver.hpp
+│   ├── package.xml
+│   ├── src
+│   │   └── motionstim8_driver.cpp -> implementação da comunicação série com o estimulador
+│   └── third_party
+│       └── stimlib -> biblioteca fornecida pelo fabricante do MotionStim8
+│           ├── doc.cfg
+│           ├── global_list_example.txt
+│           ├── mainfiledoc.doc
+│           ├── motionstim8.cpp
+│           ├── motionstim8.h
+│           ├── serial_linux.cpp
+│           ├── serial_linux.h
+│           ├── serialport.h
+│           └── single_pulse_example.txt
+│
+└── motionstim8_hardware -> package responsável pela interface entre o ros2_control e o MotionStim8
+    ├── CMakeLists.txt
+    ├── include
+    │   └── motionstim8_hardware
+    │       └── motionstim8_hardware.hpp
+    ├── motionstim8_hardware_plugin.xml -> plugin da Hardware Interface
+    ├── package.xml
+    └── src
+        └── motionstim8_hardware.cpp -> converte os comandos do controlador em parâmetros de estimulação, aplica limites de saturação e envia-os ao MotionStim8Driver
+
+
+    Configuration Node         AngleEstimationNode
+        │                              |
+        ▼                              ▼
+    /configuration              /joint_position
+        │                              |
+        ▼                              ▼
+    FES Controller               FES Controller 
+        │
+    stim_command                GenerateReferenceNode
+        │                              |
+        ▼                              ▼
+    MotionStim8Hardware         /reference_joint_state
+        │                              |
+        ▼                              ▼
+    MotionStim8Driver             FES Controller 
+        │
+        ▼
+    MotionStim8
+    
+
+É constituído por cinco packages:
+
+    -control_signals
+    -fes_bringup
+    -fes_control
+    -motionstim8_hardware
+    -motionstim8_driver
 
 // fes_bringup pkg //
 
-    Criou-se um tipo de mensagem ROS2 chamado Configuration.msg
+    Foi criado um tipo de mensagem ROS 2 denominado Configuration.msg.
 
-    O package motionstim8_configuration é responsável pela configuração inicial do sistema. 
-    Contém um nó de configuração e a mensagem Configuration.msg, utilizada para publicar as opções selecionadas pelo utilizador, como as articulações a controlar, o modo de controlo e os ganhos PID, informações do paciente.
-    Esta separação desacopla a configuração do processamento, tornando a arquitetura mais modular e facilitando a futura integração de uma interface gráfica.
-   
+    O package fes_bringup é responsável pela configuração inicial do sistema e pelo lançamento da arquitetura.
+
+    Contém o ConfigurationNode e a mensagem Configuration.msg, utilizada para publicar as opções selecionadas pelo utilizador, tais como:
+        - articulações a controlar;
+        - modo de controlo;
+        - ganhos PID;
+        - informações do paciente;
+        - diretório onde serão armazenados os resultados experimentais.
+        -coativação
+        - PW modulation ou PA modulation
+
+    O ConfigurationNode é ainda responsável por criar automaticamente a estrutura de diretórios dos ensaios e por ativar os controladores das articulações selecionadas através do controller_manager.
+
+
 // control_signals pkg //
 
-    Composto por :
+    É composto por três módulos:
 
-        -Generate_Reference -> nó que subscreve trajetórias de referência
-        -Angle_Estimation -> nó que subscreve posição atual (neste momento, simulação de uma sinosoide)
-    
+        - Generate_Reference -> gera e publica as trajetórias de referência de posição e de torque.
+
+        - Angle_Estimation -> publica a posição atual das articulações (atualmente simulada através de uma sinusoide).
+
+        - Torque_Estimation -> publica ou estima o torque articular (atualmente simulada através de uma sinusoide).
+
+
 // fes_control pkg //
-    
-    Calcula o PID em Posiçao ou Torque.
+
+    Implementa o controlador do sistema como um plugin do ros2_control.
+
+    O controlador recebe a posição atual e a referência da articulação, calcula o erro e aplica um controlador PID.
+
+    Atualmente encontra-se implementado o modo de controlo em posição e em torque.
+
+    O comando calculado é normalizado para o intervalo [-1,1] antes de ser enviado para a Hardware Interface.
 
 
 // motionstim8_hardware pkg //
 
-    A classe MotionStim8Hardware implementa a Hardware Interface do ros2_control, sendo responsável por fazer a ligação entre a arquitetura ROS 2 e o estimulador MotionStim8
+    A classe MotionStim8Hardware implementa a Hardware Interface do ros2_control, sendo responsável por fazer a ligação entre a arquitetura ROS 2 e o estimulador MotionStim8.
 
-    Encarregue de:
-         atribuir canais ás juntas. 
-         se é agonista ou antagonista
-         aplicar limites de saturação
-    
+    É responsável por:
+
+        - exportar as state_interfaces e command_interfaces;
+        - converter os comandos normalizados provenientes do controlador em parâmetros de estimulação;
+        - determinar se a estimulação deve ser aplicada ao músculo responsável pela extensão ou pela flexão da articulação;
+        - aplicar os limites de saturação;
+        - fazer a coativação
+        - enviar os parâmetros de estimulação ao MotionStim8Driver.
+
 
 // motionstim8_driver pkg //
 
-        Este package implementa a interface entre o ROS2 e o estimulador MotionStim8. É responsável pela integração com o ros2_control através da classe MotionStim8Hardware, que expõe o estimulador como um dispositivo compatível com o framework.
+    Este package implementa a comunicação de baixo nível com o estimulador MotionStim8.
 
-        A comunicação com o estimulador é realizada através da biblioteca stimlib.
+    É responsável por:
+
+        - estabelecer a comunicação série com o estimulador;
+        - inicializar o MotionStim8;
+        - enviar os parâmetros de estimulação;
+        - terminar corretamente a comunicação quando necessário.
+
+    A comunicação com o estimulador é realizada através da biblioteca stimlib.
 
 ####################   DESENVOLVIMENTO   #######################
 
-// fes_bringup //
 
-    Launch: Vai executar todos os nós após o nó do motionstim8_configuration publicar /configuration.
-            Para isso acontecer é usado o RegisterEventHandler OnProcesExit -> É um evento. Quando um processo termina, executa outras ações.
+   // fes_bringup //
 
-    Config: Ficheiro usado pelo controller_manager.
-            Tem os controllers das juntas e o update_rate(frequência do ciclo do controller_manager)
+    Launch
 
-    URDF:
+        Executa o ConfigurationNode e, após este publicar a configuração, inicia automaticamente os restantes nós através do evento RegisterEventHandler(OnProcessExit).
 
-        Parâmetros de estimulação:
-            canal agonista;
-            canal antagonista;
-            largura de pulso máxima do agonista;
-            largura de pulso máxima do antagonista;
-            corrente do agonista;
-            corrente do antagonista.
-        
-        Parâmetros gerais do hardware:
-            porta série (serial_port);
-            main_time;
-            group_time;
-            n_factor;
-            simulation_mode (opcional).
+    Config
+
+        Ficheiros utilizados pelo controller_manager, contendo a configuração dos controladores e os ganhos PID.
+
+    URDF
+
+        Contém a configuração do MotionStim8, incluindo:
+
+            - canais de estimulação;
+            - correntes;
+            - larguras de pulso máximas;
+            - parâmetros de coativação;
+            - parâmetros gerais do hardware (serial_port, main_time, group_time, n_factor e simulation_mode).
 
     Configuration.msg
-        -> tipo de mensagem 
-        parâmetros:
-            -joints -> (ankle_left, ankle_right, knee_left, knee_right)
-            -control_mode -> (Position, Torque)
-            -kp -> ganho proporcional
-            -kd -> ganho derivativo
-            -ki -> ganho integral
-            -patient_name
-            -sex
-            -age
-            -height
-            -weight
-            log_directory -> diretório onde serão armazenados os resultados do ensaio (logs/<paciente>/<data>/trialX).
 
-    Node: configuration_node
+        Mensagem ROS 2 utilizada para configurar o sistema.
+
+        Inclui:
+            - articulações;
+            - modo de controlo (Position/Torque);
+            - ganhos PID;
+            - informações do paciente.
+
+    Node: ConfigurationNode
+
+        Responsável por solicitar ao utilizador a configuração do ensaio, criar a estrutura de diretórios para guardar os resultados experimentais, publicar a mensagem /configuration e ativar os controladores das articulações selecionadas através do controller_manager.
 
         Class: ConfigurationNode
 
@@ -124,230 +263,181 @@ Existem cinco packages:
 
 // control_signals //
 
+    Package responsável pela geração das referências e pela estimação dos estados articulares utilizados pelo controlador.
+
     Generate_Reference
+
         Node: generate_reference_node
 
-        Class : GenerateReferenceNode
+        Class: GenerateReferenceNode
 
-            Construtor:
+            Construtor
 
-                Tarefa: Atribuição da junta á sua respetiva trajetória.
+                Inicializa as trajetórias de referência de cada articulação, os publishers e o temporizador de publicação.
 
-                        hip_left → Healthy_LH
-                        knee_left → Healthy_LK
-                        ankle_left → Healthy_LA
-                        hip_right → Healthy_RH
-                        knee_right → Healthy_RK
-                        ankle_right → Healthy_RA
+                Publica:
+                    - /reference_joint_states (referências de posição)
+                    - /reference_torque (referências de torque)
 
-                Publish: /reference_joint_states -> trajetórias de referência de cada junta
+            Função: update_reference()
 
-                parametros:
+                Atualiza e publica, a 100 Hz, as trajetórias de referência de posição e de torque das articulações selecionadas.
 
-                    index_	-> Índice do ponto atual da trajetória.
-                    reference_pub_	-> Publisher do tópico /reference_joint_states.
-                    trajectories_ -> Mapa que associa cada junta ao respetivo vetor de referência.
-                    timer_	-> Temporizador que executa a publicação a 100 Hz(10ms).
-                                
-            Função : update_reference()
+                As referências de posição são convertidas de graus para radianos antes de serem publicadas.
 
-                Tarefa: Guarda no tópico /reference_joint_states a posiçao de referencia que vai ser continuamente atualizada de 10 em 10ms.
-                        Preenche o vetor name com as 4 juntas.
-                        Existe conversão de graus para rads pois o ROS2 trabalha com rads.
-                        Esta informação é usada posteriormente no pkg motionstim8_controller.
-                Criada msg do tipo JointStates:
-                        name = [ ]
-                        position = [ ]
-
-                parametros:
-
-                    msg  ->  Mensagem `JointState` publicada.                     
-                    msg.name -> Lista das articulações.                                  
-                    msg.position -> Valores de referência em radianos para cada articulação. 
-                    index_ -> Determina o ponto atual da trajetória.                   
-                    TrajectoryLength -> Número total de amostras da trajetória.                
-                    reference_pub_ -> Publica a mensagem no tópico `/reference_joint_states`.  
-
-                Topic: exemplo do que é guardado em /reference_joint_states
-
-                            name
-                            ---------
-                            knee_left
-                            ankle_right
-
-                            position
-                            ---------
-                            0.319
-                            -0.122
-
-    
     Angle_Estimation
 
         Node: angle_estimation_node
 
-        Class: AngleEstimation_node
+        Class: AngleEstimationNode
 
-            Construtor: 
-                Tarefa:
+            Construtor
 
-                Publish: /joint_position -> Type: JointStates (para já é uma sinusoide)
+                Inicializa o publisher do tópico /joint_position.
 
             Função: timer_callback()
-                Tarefa: Percorre todas as juntas e calcula a posição atual delas, através de uma sinusoide.
-                        A msg depois é enviada para o tópico /joint_position.
 
-                Cria msg do tipo JointState
-                
-                Nota: Antes de enviar a msg para o tópico, é associado um timestamp à mensagem através de msg.header.stamp = now(). 
-                      Este regista o instante em que a posição articular foi gerada,
+                Calcula e publica a posição atual das articulações.
+
+                Atualmente, a posição é simulada através de uma sinusoide, sendo posteriormente utilizada pelo controlador.
+
+    Torque_Estimation
+
+    Node: torque_estimation_node
+
+    Class: TorqueEstimationNode
+
+        Construtor
+
+            Inicializa o publisher do tópico /joint_torque.
+
+        Função: timer_callback()
+
+            Calcula e publica o torque estimado das articulações no tópico /joint_torque, sendo esta informação utilizada pelo controlador no modo de controlo em torque.
 
 // fes_control //
 
-    Plugin do ros2_control gerido pelo controller_manager e reutilizado para diferentes juntas.
-        
-        Class: Controller herda de ControllerInterface
+    Plugin do ros2_control gerido pelo controller_manager, responsável pelo controlo de cada articulação.
 
-            Função : on_init()
-                Responsável por:
-                    ->declarar os parâmetros do controlador (joint e output_scale);
-                    ->inicializar as variáveis internas (desired_position_, current_position_ e command_);
-                    ->preparar o controlador para a fase de configuração.
+    Class: Controller (herda de ControllerInterface)
 
-            Função : command_interface_configuration()
-                Tarefa: Define quais as interfaces de comando que o controlador necessita.
-                        Neste caso devolve apenas uma interface:
+        Função: on_init()
 
-                            <joint>/stim_command
+            Declara os parâmetros do controlador e inicializa as variáveis necessárias ao funcionamento do algoritmo de controlo.
 
-                        É através desta interface que o comando calculado pelo PID é enviado para a Hardware Interface(presente em motionstim8_hardware).
+        Função: command_interface_configuration()
 
-            Função : state_interface_configuration()
-                Executada quando o controlador entra no estado Configured.
+            Define a interface de comando:
 
-                    Responsabilidades:
+                <joint>/stim_command
 
-                        lê o nome da articulação (joint);
-                        abre o ficheiro CSV para registo dos resultados;
-                        lê o parâmetro output_scale; (está no controller.yaml)
-                        cria os três subscritores:
-                            /reference_joint_states;
-                            /joint_position;
-                            /configuration; -> onde tem os ganhos e o modo de controlo
-                        recebe os ganhos PID enviados pelo ConfigurationNode;
-                        inicializa o controlador PID (control_toolbox::Pid);
-                        prepara o controlador para iniciar o controlo.
+            através da qual o comando calculado é enviado para a Hardware Interface.
 
-            Função : on_configure()
-            Função : on_activate()
-            Função : on_deactivate()
-                ->põe a 0.
+        Função: state_interface_configuration()
 
-            Função : update()
-                Executada periodicamente pelo controller_manager (100 Hz).
-                Implementa o algoritmo de controlo.
+            Define a interface de estado utilizada pelo controlador:
 
-                Em cada ciclo:
+                <joint>/position
 
-                    verifica se o PID já foi inicializado;
+        Função: on_configure()
 
-                calcula o erro:
+            Inicializa o controlador.
 
-                    erro = referência − posição atual
+            Responsabilidades:
 
-                aplica o controlador PID (modo posição);
-                normaliza a saída para o intervalo [-1,1];
-                escreve o comando na command_interface;
-                regista posição, referência, erro e saída do PID no ficheiro CSV;
+                - subscreve o tópico /configuration;
+                - seleciona o modo de controlo (Position ou Torque);
+                - cria os subscritores das referências e medições correspondentes ao modo selecionado;
+                - recebe os ganhos PID;
+                - inicializa o controlador PID e configura o mecanismo de anti-windup;
+                - cria o ficheiro CSV para registo dos resultados experimentais.
+
+        Função: on_activate()
+
+            Ativa o controlador.
+
+        Função: on_deactivate()
+
+            Coloca o comando de estimulação a zero.
+
+        Função: update()
+
+            Executada periodicamente pelo controller_manager (100 Hz).
+
+            Em cada ciclo:
+
+                - calcula o erro entre a referência e a medição;
+                - calcula o comando através do controlador PID;
+                - limita a saída ao intervalo [-1,1];
+                - escreve o comando na interface <joint>/stim_command;
+                - regista os resultados experimentais no ficheiro CSV.
 
 
 // motionstim8_hardware //
 
-        Plugin
+    Plugin do ros2_control responsável pela interface entre o controlador e o estimulador MotionStim8.
 
-            Class : MotionStim8Hardware herda de hardware_interface
+        Class: MotionStim8Hardware (herda de SystemInterface)
 
-                Função : on_init()
+            Função: on_init()
 
-                    É executada quando a Hardware Interface é inicializada.
+                Inicializa a Hardware Interface.
 
-                    Responsabilidades:
-                        -inicializa a classe base (SystemInterface);
-                        -lê os parâmetros gerais do hardware definidos no URDF (serial_port, main_time, group_time, n_factor e simulation_mode);
-                        -percorre todas as joints definidas no URDF;
-                        -cria uma estrutura StimConfig para cada articulação controlada, contendo:
-                        -canais agonista e antagonista;
-                        -correntes;
-                        -larguras de pulso máximas;
-                        -armazena a configuração de cada articulação;
-                        -inicializa os vetores command_ e position_.
+                Responsabilidades:
 
-                Função : on_configure()
+                    - inicializa a classe base (SystemInterface);
+                    - lê os parâmetros gerais do hardware definidos no URDF;
+                    - cria a configuração de estimulação de cada articulação;
+                    - inicializa os vetores de comandos e estados.
 
-                    Executada quando a Hardware Interface entra no estado Configured.
+            Função: on_configure()
 
-                    Responsabilidades:
-                        -verifica se o sistema está em modo de simulação;
-                        -estabelece a comunicação série com o MotionStim8 através do MotionStim8Driver;
-                        -cria a lista de canais de estimulação;
-                        -inicializa o estimulador com os parâmetros definidos no URDF;
-                        -coloca a interface pronta para iniciar o funcionamento.
+                Configura a Hardware Interface.
 
-                Função : export_state_interfaces()
+                Responsabilidades:
 
-                    Exporta as interfaces de estado disponibilizadas pela Hardware Interface.
+                    - recebe a configuração do sistema através do tópico /configuration;
+                    - recebe a posição atual das articulações através do tópico /joint_position;
+                    - estabelece a comunicação série com o MotionStim8 (modo real);
+                    - inicializa o estimulador;
+                    - prepara a Hardware Interface para funcionamento.
 
-                    Neste projeto cria, para cada articulação controlada, uma interface:
+            Função: export_state_interfaces()
 
-                        -position
+                Exporta a interface de estado:
 
-                    que pode ser utilizada pelos controladores para obter o estado da articulação.
+                    - <joint>/position
 
-                Função : export_command_interfaces()
+            Função: export_command_interfaces()
 
-                    Exporta as interfaces de comando utilizadas pelos controladores.
+                Exporta a interface de comando:
 
-                    Para cada articulação cria uma interface:
+                    - <joint>/stim_command
 
-                        -stim_command
+            Função: write()
 
-                    onde os controladores escrevem o comando normalizado que será posteriormente convertido em parâmetros de estimulação.
+                Executada periodicamente pelo controller_manager (100 Hz).
 
-                Função : write()
+                Em cada ciclo:
 
-                    É executada em cada ciclo do controller_manager.
+                    - lê o comando normalizado enviado pelo controlador;
+                    - converte o comando em Pulse Width para o músculo agonista;
+                    - calcula a Pulse Width do músculo antagonista quando a coativação está ativada;
+                    - aplica os pesos definidos para o PID e para a coativação;
+                    - limita as Pulse Width aos valores máximos configurados;
+                    - cria os vetores de Pulse Width, corrente e modo de estimulação;
+                    - em modo de simulação apresenta informação de depuração;
+                    - em modo real envia os parâmetros para o MotionStim8 através do MotionStim8Driver.
 
-                    Implementa toda a conversão entre o comando do controlador e os parâmetros enviados ao MotionStim8.
+            Função: read()
 
-                    Responsabilidades:
+                Atualiza o estado das articulações.
 
-                        verifica se a Hardware Interface está configurada;
-                        percorre todas as articulações;
-                        lê o comando normalizado (stim_command);
-                        determina se a estimulação deve ser aplicada ao músculo agonista ou antagonista;
-                        calcula a largura de pulso correspondente;
+                Atualmente não existem sensores ligados ao sistema, pelo que esta função apenas devolve OK.
 
-                        cria os vetores:
-                            pulse_width;
-                            pulse_current;
-                            mode;
+            Função: on_deactivate()
 
-                        em modo de simulação apenas apresenta informação de depuração;
-                        em modo real envia os parâmetros para o MotionStim8 através do MotionStim8Driver.
-                        
-                Função : read()
-
-                    Corresponde à função de leitura da Hardware Interface.
-
-                    Atualmente não existe qualquer sensor ligado ao sistema, pelo que esta função apenas devolve OK, não atualizando o estado das articulações.
-
-                Função : on_deactivate()
-
-                    Executada quando a Hardware Interface é desativada.
-
-                    Responsabilidades:
-
-                        fecha a comunicação série com o MotionStim8 (modo real);
-                        marca a interface como não configurada (configured_ = false).
+                Termina a comunicação com o MotionStim8 e desativa a Hardware Interface.
                         
                 Variáveis membro principais
                     

@@ -9,11 +9,18 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
 
+find_package(fes_bringup REQUIRED)
+
 add_executable(control_signals_node
   src/control_signals_node.cpp
+
   Generate_Reference/generate_reference_node.cpp
-  Generate_Reference/trajectories.cpp
+  Generate_Reference/position_trajectories.cpp
+  Generate_Reference/torque_trajectories.cpp
+
   Angle_Estimation/AngleEstimation_node.cpp
+
+  Torque_Estimation/torque_estimation_node.cpp
 )
 
 target_include_directories(
@@ -21,25 +28,30 @@ target_include_directories(
   PUBLIC
     Generate_Reference/include
     Angle_Estimation/include
+    Torque_Estimation/include
 )
 
 ament_target_dependencies(
   control_signals_node
   rclcpp
   sensor_msgs
+  fes_bringup
 )
 
 install(
   TARGETS
     control_signals_node
-  DESTINATION lib/${PROJECT_NAME}
+  DESTINATION
+    lib/${PROJECT_NAME}
 )
 
 install(
   DIRECTORY
     Generate_Reference/include/
     Angle_Estimation/include/
-  DESTINATION include
+    Torque_Estimation/include/
+  DESTINATION
+    include
 )
 
 if(BUILD_TESTING)

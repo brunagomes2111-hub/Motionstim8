@@ -1,6 +1,6 @@
 #include "motionstim8_hardware/motionstim8_hardware.hpp"
-
 #include "pluginlib/class_list_macros.hpp"
+#include "sensor_msgs/msg/joint_state.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -30,6 +30,7 @@ MotionStim8Hardware::on_init(const hardware_interface::HardwareComponentInterfac
 
     // Parametro opcional. Se ausente, fica false (modo real).
     auto it = info.hardware_parameters.find("simulation_mode");
+
     if(it != info.hardware_parameters.end())
     {
         simulation_mode_ = (it->second == "true" || it->second == "1");
@@ -37,14 +38,13 @@ MotionStim8Hardware::on_init(const hardware_interface::HardwareComponentInterfac
 
     if(simulation_mode_)
     {
-        RCLCPP_WARN(rclcpp::get_logger("MotionStim8Hardware"),
-            "SIMULATION MODE ativo: a porta serie NAO sera aberta e nada sera enviado ao estimulador");
+        RCLCPP_WARN(rclcpp::get_logger("MotionStim8Hardware"),"SIMULATION MODE ativo: a porta serie NAO sera aberta e nada sera enviado ao estimulador");
     }
 
     //Percorre as joints definidas no URDF e extrai os parâmetros necessários para cada uma
     for(const auto & joint : info.joints)
     {
-        if(joint.parameters.empty())// Ignora joints sem parâmetros de estimulação (neste caso as hips)
+        if(joint.parameters.empty())// Ignora joints sem parâmetros de estimulação 
         {
             continue;
         }
@@ -54,27 +54,41 @@ MotionStim8Hardware::on_init(const hardware_interface::HardwareComponentInterfac
         // Cria a configuração de estimulação da joint a partir dos parâmetros do URDF
         StimConfig config;
 
-        config.agonist_pw_max = std::stod(joint.parameters.at("agonist_pw_max"));
+        config.extension_pw_max =std::stod(joint.parameters.at("extension_pw_max"));
 
-        config.antagonist_pw_max = std::stod(joint.parameters.at("antagonist_pw_max"));
+        config.flexion_pw_max =std::stod(joint.parameters.at("flexion_pw_max"));
 
-        config.agonist_current = std::stod(joint.parameters.at("agonist_current"));
+        config.extension_pw =std::stod(joint.parameters.at("extension_pw"));
 
-        config.antagonist_current = std::stod(joint.parameters.at("antagonist_current"));
+        config.flexion_pw =std::stod(joint.parameters.at("flexion_pw"));
 
-        config.agonist_channel = std::stoi(joint.parameters.at("agonist_channel"));
+        config.extension_current =std::stod(joint.parameters.at("extension_current"));
 
-        config.antagonist_channel = std::stoi(joint.parameters.at("antagonist_channel"));
+        config.flexion_current =std::stod(joint.parameters.at("flexion_current"));
+
+        config.extension_m_pw_cc =std::stod(joint.parameters.at("extension_m_pw_cc"));
+
+        config.extension_b_pw_cc =std::stod(joint.parameters.at("extension_b_pw_cc"));
+
+        config.flexion_m_pw_cc =std::stod(joint.parameters.at("flexion_m_pw_cc"));
+
+        config.flexion_b_pw_cc =std::stod(joint.parameters.at("flexion_b_pw_cc"));
+
+        config.extension_channel =std::stoi(joint.parameters.at("extension_channel"));
+
+        config.flexion_channel =std::stoi(joint.parameters.at("flexion_channel"));
 
         //Associa a configuração à joint correspondente
         stim_configs_[joint.name] = config;
 
-        RCLCPP_INFO(rclcpp::get_logger("MotionStim8Hardware"), "Joint %s -> AG:%d ANT:%d", joint.name.c_str(), config.agonist_channel, config.antagonist_channel);
+        RCLCPP_INFO(rclcpp::get_logger("MotionStim8Hardware"), "Joint %s -> AG:%d ANT:%d", joint.name.c_str(), config.extension_channel, config.flexion_channel);
     }
 
     command_.resize(joint_names_.size(), 0.0);
 
     position_.resize(joint_names_.size(), 0.0);
+
+    joint_position_.resize(joint_names_.size(), 0.0);
 
     return CallbackReturn::SUCCESS;
 }
@@ -82,10 +96,40 @@ MotionStim8Hardware::on_init(const hardware_interface::HardwareComponentInterfac
 CallbackReturn
 MotionStim8Hardware::on_configure(const rclcpp_lifecycle::State &)
 {
+
+    rclcpp::QoS qos(1);
+    qos.reliable();
+    qos.transient_local();
+
+    //subscription para receber a configuração de coativação (enabled/disabled ) do nó de configuração
+    configuration_sub_ =get_node()->create_subscription<fes_bringup::msg::Configuration>("/configuration",qos,[this](const fes_bringup::msg::Configuration::SharedPtr msg)
+    {
+        coactivation_enabled_ = msg->coactivation_enabled;
+        control_mode_ = msg->control_mode;
+
+        RCLCPP_INFO(get_logger(),"Control mode: %s | Coactivation: %s",control_mode_.c_str(),coactivation_enabled_ ? "enabled" : "disabled");
+    
+    });
+
+    position_sub_ = get_node()->create_subscription<sensor_msgs::msg::JointState>("/joint_position",10,[this](const sensor_msgs::msg::JointState::SharedPtr msg)
+    {
+        for(size_t i = 0; i < msg->name.size(); i++)
+        {
+            auto it = std::find(joint_names_.begin(), joint_names_.end(), msg->name[i]);
+
+            if(it != joint_names_.end())
+            {
+                size_t index = std::distance(joint_names_.begin(), it);
+
+                joint_position_[index] = msg->position[i];
+            }
+        }
+    });
+
+
     if(simulation_mode_)
     {
-        RCLCPP_WARN(rclcpp::get_logger("MotionStim8Hardware"),
-            "SIMULATION MODE: a saltar abertura da porta serie e inicializacao do estimulador");
+        RCLCPP_WARN(rclcpp::get_logger("MotionStim8Hardware"),"SIMULATION MODE: a saltar abertura da porta serie e inicializacao do estimulador");
 
         configured_ = true;
 
@@ -97,6 +141,7 @@ MotionStim8Hardware::on_configure(const rclcpp_lifecycle::State &)
     if (!driver_.connect())
     {
         RCLCPP_ERROR(rclcpp::get_logger("MotionStim8Hardware"),"Failed to connect to MotionStim8.");
+
         return CallbackReturn::ERROR;
     }
 
@@ -106,8 +151,8 @@ MotionStim8Hardware::on_configure(const rclcpp_lifecycle::State &)
     {
         const auto & config = stim_configs_.at(joint_name);
 
-        channels.push_back(config.agonist_channel);
-        channels.push_back(config.antagonist_channel);
+        channels.push_back(config.extension_channel);
+        channels.push_back(config.flexion_channel);
     }
 
     RCLCPP_INFO(rclcpp::get_logger("MotionStim8Hardware"),"Initializing stimulator");
@@ -135,7 +180,7 @@ std::vector<hardware_interface::StateInterface> MotionStim8Hardware::export_stat
 
     for(size_t i = 0; i < joint_names_.size(); i++)
     {
-        state_interfaces.emplace_back(joint_names_[i], hardware_interface::HW_IF_POSITION, &position_[i]);
+        state_interfaces.emplace_back(joint_names_[i],hardware_interface::HW_IF_POSITION,&position_[i]);   
     }
 
     return state_interfaces;
@@ -172,35 +217,94 @@ MotionStim8Hardware::write(const rclcpp::Time &, const rclcpp::Duration &)
     {
         const auto & config = stim_configs_.at(joint_names_[i]);
 
-        // Comando calculado pelo PID para esta joint
-        double cmd = command_[i];
+        double output_pid = std::clamp(command_[i], -1.0, 1.0);
 
-        double agonist_pw = 0.0;
+        double extension_pw = 0.0;
+        double flexion_pw = 0.0;
+        double extension_pw_pid = 0.0;
+        double flexion_pw_pid = 0.0;
 
-        double antagonist_pw = 0.0;
 
-        if(cmd > 0.0)
+        // Coativação: calcula a PW do canal oposto com base na posição da articulação e nos parâmetros de coativação
+        if (control_mode_ == "position")
         {
-            agonist_pw = cmd * config.agonist_pw_max;
+            coactivation_Extension =config.extension_m_pw_cc * joint_position_[i] + config.extension_b_pw_cc;
+
+            coactivation_Flexion = config.flexion_m_pw_cc * joint_position_[i] + config.flexion_b_pw_cc;
+
         }
-        else if(cmd < 0.0)
+        else if (control_mode_ == "torque")
         {
-            antagonist_pw = -cmd * config.antagonist_pw_max;
+            // cálculo da coativação para o modo torque
+            coactivation_Extension = 0.0;
+            coactivation_Flexion = 0.0;
         }
 
-        pulse_width.push_back(agonist_pw);
-        pulse_width.push_back(antagonist_pw);
+        // Se o comando for positivo, ativa o canal extension se negativo ativa o canal flexion
+        // Se a coativação estiver desativada, o canal oposto recebe PW=0
 
-        pulse_current.push_back(config.agonist_current);
-        pulse_current.push_back(config.antagonist_current);
+       if (output_pid > 0.0)
+        {
+            
+            // Converte o comando PID normalizado [0,1] em Pulse Width (µs)
+            extension_pw_pid = output_pid * config.extension_pw_max;
+        
+            // Coativação: ativa também o flexion com a PW configurada
+            if (coactivation_enabled_)
+            {
+                
+                extension_pw = weight_PID * extension_pw_pid + weight_CC * coactivation_Extension;
+                flexion_pw = weight_CC * coactivation_Flexion;
+            
+            }else{
+
+                extension_pw = extension_pw_pid;
+                flexion_pw = 0.0;
+
+            }
+        }
+        else if (output_pid < 0.0)
+        {
+        
+            double pid_abs = std::abs(output_pid);
+
+            // Converte o comando PID normalizado [0,1] em Pulse Width (µs)
+            flexion_pw_pid = pid_abs * config.flexion_pw_max;
+
+            // Coativação: ativa também o extension com a PW configurada
+            if (coactivation_enabled_)
+            {
+                flexion_pw = weight_PID * flexion_pw_pid + weight_CC * coactivation_Flexion;
+                extension_pw = weight_CC * coactivation_Extension;
+            }else{
+                
+                flexion_pw = flexion_pw_pid;
+                extension_pw = 0.0;
+            }
+        }
+        else
+        {
+            extension_pw = 0.0;
+            flexion_pw = 0.0;
+        }
+
+        // Saturação física de cada músculo
+        extension_pw = std::clamp(extension_pw,0.0,config.extension_pw_max);
+
+        flexion_pw = std::clamp(flexion_pw,0.0,config.flexion_pw_max);
+
+        pulse_width.push_back(extension_pw);
+        pulse_width.push_back(flexion_pw);
+
+        pulse_current.push_back(config.extension_current);
+        pulse_current.push_back(config.flexion_current);
 
         //Modo single pulses
-        mode.push_back(0); //canal agonista
-        mode.push_back(0); //canal antagonista
+        mode.push_back(0); //canal extension
+        mode.push_back(0); //canal flexion
 
-        RCLCPP_INFO(rclcpp::get_logger("MotionStim8Hardware"),
-            "Joint: %s | CMD: %.2f | AG PW: %.2f | ANT PW: %.2f", joint_names_[i].c_str(),
-            cmd, agonist_pw, antagonist_pw);
+        RCLCPP_INFO(rclcpp::get_logger("MotionStim8Hardware"),"Joint: %s | output_pid: %.2f | AG PW: %.2f | ANT PW: %.2f",
+         joint_names_[i].c_str(),output_pid, extension_pw, flexion_pw);
     }
 
     unsigned int num_channels = static_cast<unsigned int>(pulse_width.size());

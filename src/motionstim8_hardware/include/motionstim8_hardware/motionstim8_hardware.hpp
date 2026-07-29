@@ -10,6 +10,8 @@
 
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 
+#include "sensor_msgs/msg/joint_state.hpp"
+
 #include "hardware_interface/handle.hpp"
 
 #include "hardware_interface/hardware_info.hpp"
@@ -19,6 +21,8 @@
 #include "rclcpp_lifecycle/state.hpp"
 
 #include "motionstim8_driver/motionstim8_driver.hpp"
+
+#include "fes_bringup/msg/configuration.hpp"
 
 namespace motionstim8_hardware
 {
@@ -59,17 +63,31 @@ private:
 
     std::vector<std::string> joint_names_;
 
+    std::vector<double> joint_position_;
+
     struct StimConfig
     {
-        double agonist_pw_max;
-        double antagonist_pw_max;
+        double extension_pw_max;
+        double flexion_pw_max;
 
-        double agonist_current;
-        double antagonist_current;
+        double extension_current;
+        double flexion_current;
 
-        int agonist_channel;
-        int antagonist_channel;
+        double extension_pw;
+        double flexion_pw;
+
+        double flexion_b_pw_cc;
+        double extension_b_pw_cc;
+
+        double flexion_m_pw_cc;
+        double extension_m_pw_cc;
+
+        int extension_channel;
+        int flexion_channel;
     };
+
+    rclcpp::Subscription<fes_bringup::msg::Configuration>::SharedPtr configuration_sub_;
+    rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr position_sub_;
 
     std::unordered_map<std::string, StimConfig> stim_configs_;
 
@@ -84,6 +102,19 @@ private:
     std::vector<double> command_;
 
     std::vector<double> position_;
+
+    bool coactivation_enabled_{false};
+    std::string control_mode_;
+
+    double coactivation_Extension = 0.0;
+    double coactivation_Flexion = 0.0;
+
+    
+    float weight_PID = 0.5;
+    float weight_CC = 0.5;
+
+
+    
 
 
 };

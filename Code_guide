@@ -1,177 +1,165 @@
-ROS2_JAZZY 
+# ROS 2 Jazzy
 
-Nome do projeto: ros2_ws_2
+## Workspace
 
-    Indice:
+ros2_ws_2
 
-    ->Arquitetura do projeto e descrição
-    ->Como compilar
+## Índice
 
-    O objetivo deste projeto é implementar uma arquitetura baseada em ROS 2 para o controlo de um sistema de Estimulação Elétrica Funcional (FES), calculando o sinal de controlo através de um controlador PID e enviando os comandos para o estimulador MotionStim8.
+- Requisitos
+- Preparação da workspace
+- Compilação
+- Execução
 
-    É constituído por cinco packages:
+---
 
-        -control_signals
-        -fes_bringup
-        -fes_control
-        -motionstim8_hardware
-        -motionstim8_driver
+# Objetivo
 
+O objetivo deste projeto é implementar uma arquitetura baseada em ROS 2 para o controlo de um sistema de Estimulação Elétrica Funcional (FES), calculando o sinal de controlo através de um controlador PID e enviando os comandos para o estimulador MotionStim8.
 
-ros2_ws_2/src/
-|
-|── logs -> informações dos pacientes e os seus resultados experimentais
-|
-|── control_signals -> package responsável por publicar as trajetorias
-│   ├── Angle_Estimation
-│   │   ├── AngleEstimation_node.cpp -> trajetória da posição atual
-│   │   └── include
-│   │       └── control_signals
-│   │           └── AngleEstimation_node.hpp
-│   ├── CMakeLists.txt
-│   ├── Generate_Reference
-│   │   ├── generate_reference_node.cpp -> trajetórias da posição de referência
-│   │   ├── include
-│   │   │   └── control_signals
-│   │   │       ├── generate_reference_node.hpp
-│   │   │       └── trajectories.hpp
-│   │   └── trajectories.cpp
-│   ├── package.xml
-│   └── src
-│       └── control_signals_node.cpp 
-├── fes_bringup -> package reponsável pelo launch e por pedir as configurações ao utilizador
-│   ├── CMakeLists.txt
-│   ├── config
-│   │   ├── controller_gains.yaml (não está a ser utilizado)
-│   │   └── controllers.yaml -> controller das juntas
-│   ├── include
-│   │   └── fes_bringup
-│   │       └── configuration_node.hpp
-│   ├── launch
-│   │   ├── fes_configuration.launch.py -> launch do node de configuração
-│   │   └── motionstim8.launch.py -> launch dos restantes ficheiros
-│   ├── msg
-│   │   └── Configuration.msg -> o que vai ser pedido ao utilizador
-│   ├── package.xml
-│   ├── src
-│   │   └── configuration_node.cpp -> pede ao utilizador as configurações, juntas a controlar, ganhos, modo de controlo, info. pessoais
-│   └── urdf
-│       └── motionstim8.urdf -> tem a atribuição dos valores máximos de alguns parametros
-├── fes_control -> package de controlo
-│   ├── CMakeLists.txt
-│   ├── controller_plugin.xml
-│   ├── include
-│   │   └── fes_control
-│   │       └── Controller.hpp
-│   ├── package.xml
-│   └── src
-│       └── fes_controller.cpp -> calculo do PID em posição ou torque, anti-windup
-├── motionstim8_driver -> package de comunicação com a stimlib, motionstim8
-│   ├── CMakeLists.txt
-│   ├── include
-│   │   └── motionstim8_driver
-│   │       └── motionstim8_driver.hpp
-│   ├── package.xml
-│   ├── src
-│   │   └── motionstim8_driver.cpp
-│   └── third_party
-│       └── stimlib -> biblioteca do motionstim8
-│           ├── doc.cfg
-│           ├── global_list_example.txt
-│           ├── mainfiledoc.doc
-│           ├── motionstim8.cpp 
-│           ├── motionstim8.h
-│           ├── serial_linux.cpp
-│           ├── serial_linux.h
-│           ├── serialport.h
-│           └── single_pulse_example.txt
-└── motionstim8_hardware -> package entre o controlo e o driver 
-    ├── CMakeLists.txt
-    ├── include
-    │   └── motionstim8_hardware
-    │       └── motionstim8_hardware.hpp
-    ├── motionstim8_hardware_plugin.xml
-    ├── package.xml
-    └── src
-        └── motionstim8_hardware.cpp -> neste ficheiro faz-se saturação, atribuição de canais aos agonistas ou antagonistas das juntas
+---
 
+# Requisitos
 
-    Configuration Node         AngleEstimationNode
-        │                              |
-        ▼                              ▼
-    /configuration              /joint_position
-        │                              |
-        ▼                              ▼
-    FES Controller               FES Controller 
-        │
-    stim_command                GenerateReferenceNode
-        │                              |
-        ▼                              ▼
-    MotionStim8Hardware         /reference_joint_state
-        │                              |
-        ▼                              ▼
-    MotionStim8Driver             FES Controller 
-        │
-        ▼
-    MotionStim8
+O projeto foi desenvolvido e testado com:
 
+- Ubuntu 24.04 LTS
+- ROS 2 Jazzy Jalisco
 
-    Compilação e Execução do código:
+Instalar o ROS 2 Jazzy seguindo o guia oficial:
 
-        Antes da primeira compilação, é necessário fazer o source da instalação do ROS 2 Jazzy:
+https://docs.ros.org/en/jazzy/Installation/Ubuntu-Install-Debs.html
 
-          -> source /opt/ros/jazzy/setup.bash
+Após a instalação do ROS 2, instalar as dependências necessárias:
 
-        Em seguida, aceder à workspace do projeto:
+```bash
+sudo apt update
 
-          -> cd ~/nome_da_pasta/ros2_ws_2
+sudo apt install -y \
+cmake \
+python3 \
+python3-pip \
+python3-colcon-common-extensions \
+ros-jazzy-ros2-control \
+ros-jazzy-ros2-controllers \
+ros-jazzy-controller-manager \
+ros-jazzy-hardware-interface \
+ros-jazzy-control-toolbox \
+ros-jazzy-pluginlib
+```
 
-        Compilar todos os packages:
+Carregar o ambiente do ROS 2:
 
-          -> colcon build --symlink-install
+```bash
+source /opt/ros/jazzy/setup.bash
+```
 
-        Após a compilação, fazer o source da workspace para disponibilizar os packages e executáveis:
+---
 
-          -> source install/setup.bash
+# Preparação da workspace
 
-        Caso seja necessário recompilar apenas um package específico, utilizar:
+Colocar a pasta `ros2_ws_2` na localização pretendida.
 
-          -> colcon build --packages-select <nome_do_package> --symlink-install
+A estrutura da workspace deverá ser semelhante à seguinte:
 
-            Por exemplo:
+```text
+ros2_ws_2/
+├── src/
+│   ├── control_signals/
+│   ├── fes_bringup/
+│   ├── fes_control/
+│   ├── motionstim8_driver/
+│   └── motionstim8_hardware/
+```
 
-            -> colcon build --packages-select fes_control --symlink-install
+---
 
-        Após a compilação, executar novamente:
+# Compilação
 
-            -> source install/setup.bash
+Antes da primeira compilação, carregar o ambiente do ROS 2:
 
-        Recompilar todo o projeto:
+```bash
+source /opt/ros/jazzy/setup.bash
+```
 
-        Se for necessário recompilar todo o projeto do início, remover os diretórios gerados durante a compilação:
+Aceder à workspace do projeto:
 
-            -> rm -rf build install log
+```bash
+cd ~/ros2_ws_2
+```
 
-        De seguida, repetir o processo de compilação:
+Compilar todos os packages:
 
-            -> source /opt/ros/jazzy/setup.bash
-            -> colcon build --symlink-install
-            -> source install/setup.bash
+```bash
+colcon build --symlink-install
+```
 
-        Execução:
+Após a compilação, carregar a workspace:
 
-        Para iniciar a arquitetura do sistema, executar:
+```bash
+source install/setup.bash
+```
 
-            -> ros2 launch fes_bringup motionstim8.launch.py
+## Compilar apenas um package
 
-        Num novo terminal, fazer o source da workspace:
+Caso seja necessário recompilar apenas um package específico:
 
-            -> source ~/BIRD/ros2_ws_2/install/setup.bash
+```bash
+colcon build --packages-select <nome_do_package> --symlink-install
+```
 
-        e executar o nó de configuração:
-    
-            -> ros2 run fes_bringup configuration_node
+Exemplo:
 
-                            ou
+```bash
+colcon build --packages-select fes_control --symlink-install
+```
 
-            -> ros2 run fes_bringup fes_configuration.launch.py
+Após a compilação:
+
+```bash
+source install/setup.bash
+```
+
+## Recompilar toda a workspace
+
+Se for necessário recompilar o projeto desde o início, remover os diretórios gerados durante a compilação:
+
+```bash
+rm -rf build install log
+```
+
+De seguida:
+
+```bash
+source /opt/ros/jazzy/setup.bash
+
+colcon build --symlink-install
+
+source install/setup.bash
+```
+
+---
+
+# Execução
+
+Iniciar a arquitetura:
+
+```bash
+ros2 launch fes_bringup motionstim8.launch.py
+```
+
+Abrir um novo terminal, carregar o ambiente do ROS 2 e a workspace:
+
+```bash
+source /opt/ros/jazzy/setup.bash
+
+cd ~/ros2_ws_2
+
+source install/setup.bash
+```
+
+Executar o nó de configuração:
+
+```bash
+ros2 run fes_bringup configuration_node
+```

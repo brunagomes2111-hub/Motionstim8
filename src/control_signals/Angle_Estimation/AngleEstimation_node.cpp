@@ -12,9 +12,7 @@ AngleEstimation_node::AngleEstimation_node(): Node("angle_estimation_node")
 
     publisher_ =create_publisher<sensor_msgs::msg::JointState>("/joint_position",10);
 
-    timer_ = create_wall_timer(
-    std::chrono::milliseconds(50),
-    std::bind(&AngleEstimation_node::timer_callback, this));
+    timer_ = create_wall_timer(std::chrono::milliseconds(50),std::bind(&AngleEstimation_node::timer_callback, this));
 
     RCLCPP_INFO(get_logger(), "Angle estimation started.");
 }

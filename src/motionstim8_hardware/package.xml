@@ -16,6 +16,7 @@
   <depend>pluginlib</depend>
   <depend>hardware_interface</depend>
   <depend>motionstim8_driver</depend>
+  <depend>fes_bringup</depend>
   
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
