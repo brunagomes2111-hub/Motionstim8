@@ -112,10 +112,18 @@ namespace control_signals
 
         index_++; //avança para o próximo ponto da trajetória
 
-        if(index_ >= TorqueTrajectoryLength && index_ >= TorqueTrajectoryLength)
+        if (control_mode_ == "position")
         {
-            index_ = 0;
+            if (index_ >= PositionTrajectoryLength)
+
+                index_ = 0;
         }
-    }
+        else
+        {
+            if (index_ >= TorqueTrajectoryLength)
+
+                index_ = 0;
+        }
+            }
 
 }

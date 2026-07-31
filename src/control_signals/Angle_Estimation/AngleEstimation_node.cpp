@@ -5,23 +5,23 @@
 namespace control_signals
 {
 
-AngleEstimation_node::AngleEstimation_node(): Node("angle_estimation_node")
+AngleEstimationNode::AngleEstimationNode(): Node("angle_estimation_node")
 {
-    //usada para gerar a função sinusoidal
-    time_ = 0.0;
 
     publisher_ =create_publisher<sensor_msgs::msg::JointState>("/joint_position",10);
 
-    timer_ = create_wall_timer(std::chrono::milliseconds(50),std::bind(&AngleEstimation_node::timer_callback, this));
+    //usada para gerar a função sinusoidal
+    timer_ = create_wall_timer(std::chrono::milliseconds(50),std::bind(&AngleEstimationNode::timer_callback, this));
 
     RCLCPP_INFO(get_logger(), "Angle estimation started.");
 }
 
 
-void AngleEstimation_node::timer_callback()
+void AngleEstimationNode::timer_callback()
 {
     sensor_msgs::msg::JointState msg;
 
+    // Incrementa o tempo usado para gerar a função sinusoidal
     time_ += 0.05;
 
     msg.name = {

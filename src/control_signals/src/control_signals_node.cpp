@@ -11,7 +11,7 @@ int main(int argc, char ** argv)
 
     auto generate_reference_node =std::make_shared<control_signals::GenerateReferenceNode>();
 
-    auto angle_estimation_node =std::make_shared<control_signals::AngleEstimation_node>();
+    auto angle_estimation_node =std::make_shared<control_signals::AngleEstimationNode>();
 
     auto torque_estimation_node =std::make_shared<control_signals::TorqueEstimationNode>();
 

@@ -14,12 +14,13 @@ namespace motionstim8_driver{
             MotionStim8Driver();
             bool connect();
             bool initialize(const std::vector<double>& channels, double main_time, double group_time, double n_factor);
-            bool sendUpdate(const std::vector<double>& pulse_width, const std::vector<double>& pulse_current, const std::vector<double>& mode);
+            bool sendUpdate(const std::vector<double>& pulse_width, const std::vector<double>& pa, const std::vector<double>& mode);
             void disconnect();
             bool isConnected() const;
 
         private:
 
+            // Biblioteca fornecida pelo fabricante do MotionStim8
             WRF::motionstim8 stim_;
 
             bool connected_{false};

@@ -6,6 +6,7 @@ float64 weight
 
 string[] joints
 string control_mode
+string modulation_mode
 
 bool coactivation_enabled
 

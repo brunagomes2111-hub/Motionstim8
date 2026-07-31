@@ -5,6 +5,8 @@
 #include <string>
 #include <algorithm>
 #include <cmath>
+#include <fstream>
+
 
 #include "hardware_interface/system_interface.hpp"
 
@@ -23,6 +25,8 @@
 #include "motionstim8_driver/motionstim8_driver.hpp"
 
 #include "fes_bringup/msg/configuration.hpp"
+
+
 
 namespace motionstim8_hardware
 {
@@ -57,6 +61,8 @@ private:
     // Driver responsável pela comunicação de baixo nível com o MotionStim8
     motionstim8_driver::MotionStim8Driver driver_;
 
+    std::ofstream stimulation_log_;
+
     bool configured_ = false;
 
     bool simulation_mode_ = false;
@@ -70,8 +76,11 @@ private:
         double extension_pw_max;
         double flexion_pw_max;
 
-        double extension_current;
-        double flexion_current;
+        double extension_pa;
+        double flexion_pa;
+
+        double extension_pa_max;
+        double flexion_pa_max;
 
         double extension_pw;
         double flexion_pw;
@@ -81,6 +90,12 @@ private:
 
         double flexion_m_pw_cc;
         double extension_m_pw_cc;
+
+        double flexion_b_pa_cc;
+        double extension_b_pa_cc;
+
+        double flexion_m_pa_cc;
+        double extension_m_pa_cc;
 
         int extension_channel;
         int flexion_channel;
@@ -104,18 +119,20 @@ private:
     std::vector<double> position_;
 
     bool coactivation_enabled_{false};
+
     std::string control_mode_;
+
+    std::string modulation_mode_;
+
+    std::string log_directory_;
 
     double coactivation_Extension = 0.0;
     double coactivation_Flexion = 0.0;
 
-    
-    float weight_PID = 0.5;
-    float weight_CC = 0.5;
-
+    const double weight_PID = 0.5;
+    const double weight_CC = 0.5;
 
     
-
 
 };
 

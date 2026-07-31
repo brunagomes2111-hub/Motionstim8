@@ -32,8 +32,6 @@ namespace fes_bringup
 
             bool getCoactivationEnabled();
 
-            double getCoactivationLevel();
-
             double getGain(const std::string & name);
 
             bool activateSelectedControllers();
@@ -41,8 +39,10 @@ namespace fes_bringup
             rclcpp::Client<controller_manager_msgs::srv::SwitchController>::SharedPtr switch_client_;
 
             int getJointSelection();
+
+            int getModulationModeSelection();
             
-            std::string currentDate();
+            std::string CurrentDate();
 
             void createTrialDirectory();
 

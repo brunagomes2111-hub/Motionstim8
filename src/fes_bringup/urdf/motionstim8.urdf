@@ -308,14 +308,23 @@
       <param name="extension_pw">300</param>
       <param name="flexion_pw">300</param>
 
-      <param name="extension_current">35</param>
-      <param name="flexion_current">35</param>
+      <param name="extension_pa_max">40</param>
+      <param name="flexion_pa_max">40</param>
+
+      <param name="extension_pa">35</param>
+      <param name="flexion_pa">35</param>
 
       <param name="flexion_m_pw_cc">1.155</param>
       <param name="extension_m_pw_cc">-0.48</param>
 
-     <param name="flexion_b_pw_cc">68.55</param>
+      <param name="flexion_b_pw_cc">68.55</param>
       <param name="extension_b_pw_cc">38.7</param>
+
+      <param name="extension_m_pa_cc">0.1155</param>
+      <param name="flexion_m_pa_cc">0.048</param>
+
+      <param name="extension_b_pa_cc">6.85</param>
+      <param name="flexion_b_pa_cc">3.87</param>
 
       <param name="extension_channel">7</param>
       <param name="flexion_channel">8</param>
@@ -334,14 +343,23 @@
       <param name="extension_pw">300</param>
       <param name="flexion_pw">300</param>
 
-      <param name="extension_current">20</param>
-      <param name="flexion_current">20</param>
+      <param name="extension_pa_max">30</param>
+      <param name="flexion_pa_max">30</param>
+
+      <param name="extension_pa">20</param>
+      <param name="flexion_pa">20</param>
 
       <param name="flexion_m_pw_cc">0.54</param>
       <param name="extension_m_pw_cc">0.96</param>
 
-     <param name="flexion_b_pw_cc">29.7</param>
+      <param name="flexion_b_pw_cc">29.7</param>
       <param name="extension_b_pw_cc">97.2</param>
+
+      <param name="extension_m_pa_cc">0.096</param>
+      <param name="flexion_m_pa_cc">-0.054</param>
+
+      <param name="extension_b_pa_cc">9.72</param>
+      <param name="flexion_b_pa_cc">2.97</param>
 
       <param name="extension_channel">0</param>
       <param name="flexion_channel">1</param>
@@ -360,14 +378,23 @@
       <param name="extension_pw">300</param>
       <param name="flexion_pw">300</param>
 
-      <param name="extension_current">35</param>
-      <param name="flexion_current">35</param>
+      <param name="extension_pa_max">40</param>
+      <param name="flexion_pa_max">40</param>
+
+      <param name="extension_pa">35</param>
+      <param name="flexion_pa">35</param>
 
       <param name="flexion_m_pw_cc">1.155</param>
       <param name="extension_m_pw_cc">-0.48</param>
 
-     <param name="flexion_b_pw_cc">68.55</param>
+      <param name="flexion_b_pw_cc">68.55</param>
       <param name="extension_b_pw_cc">38.7</param>
+
+      <param name="extension_m_pa_cc">0.1155</param>
+      <param name="flexion_m_pa_cc">0.048</param>
+
+      <param name="extension_b_pa_cc">6.85</param>
+      <param name="flexion_b_pa_cc">3.87</param>
 
       <param name="extension_channel">3</param>
       <param name="flexion_channel">4</param>
@@ -386,14 +413,23 @@
       <param name="extension_pw">300</param>
       <param name="flexion_pw">200</param>
 
-      <param name="extension_current">30</param>
-      <param name="flexion_current">30</param>
+      <param name="extension_pa_max">50</param>
+      <param name="flexion_pa_max">30</param>
+
+      <param name="extension_pa">30</param>
+      <param name="flexion_pa">30</param>
 
       <param name="flexion_m_pw_cc">0.54</param>
       <param name="extension_m_pw_cc">0.96</param>
 
-     <param name="flexion_b_pw_cc">29.7</param>
+      <param name="flexion_b_pw_cc">29.7</param>
       <param name="extension_b_pw_cc">97.2</param>
+
+      <param name="extension_m_pa_cc">0.096</param>
+      <param name="flexion_m_pa_cc">-0.054</param>
+
+      <param name="extension_b_pa_cc">9.72</param>
+      <param name="flexion_b_pa_cc">2.97</param>
 
       <param name="extension_channel">1</param>
       <param name="flexion_channel">2</param>

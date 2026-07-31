@@ -68,7 +68,7 @@ private:
     double kd_ = 0.0;
 
     double reference = 0.0;
-    double mesurement = 0.0;
+    double measurement = 0.0;
 
     double command_ = 0.0;
 

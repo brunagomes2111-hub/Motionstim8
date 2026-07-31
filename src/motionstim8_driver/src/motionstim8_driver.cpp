@@ -55,6 +55,8 @@ namespace motionstim8_driver
             return false;
         }
 
+        // Frequência equivalente do estimulador (Hz)
+        // calculada a partir do main_time definido pelo fabricante.
         double frequency = 1000.0 / (1.0 + 0.5 * main_time);
 
         if (frequency > 500.0)
@@ -105,6 +107,7 @@ namespace motionstim8_driver
             return false;
         }
 
+    
         // Verificação de segurança
         for (size_t i = 0; i < num_channels; ++i)
         {

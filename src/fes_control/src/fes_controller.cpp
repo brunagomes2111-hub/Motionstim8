@@ -27,11 +27,6 @@ Controller::on_init()
 {
     joint_name_ = auto_declare<std::string>("joint", "");
 
-    reference = 0.0;
-    mesurement = 0.0;
-
-    command_ = 0.0;
-
     return CallbackReturn::SUCCESS;
 }
 
@@ -63,14 +58,17 @@ Controller::state_interface_configuration() const
 controller_interface::CallbackReturn
 Controller::on_configure(const rclcpp_lifecycle::State &)
 {
+
     joint_name_ = get_node()->get_parameter("joint").as_string();
+
+    RCLCPP_INFO(get_node()->get_logger(), "Joint: %s", joint_name_.c_str());
 
     rclcpp::QoS qos(1);
     qos.reliable();
     qos.transient_local();
 
 
-    configuration_sub_ =get_node()->create_subscription<fes_bringup::msg::Configuration>("/configuration", qos,[this](const fes_bringup::msg::Configuration::SharedPtr msg)
+    configuration_sub_ = get_node()->create_subscription<fes_bringup::msg::Configuration>("/configuration", qos,[this](const fes_bringup::msg::Configuration::SharedPtr msg)
     {
         control_mode_ = msg->control_mode;
 
@@ -101,7 +99,7 @@ Controller::on_configure(const rclcpp_lifecycle::State &)
                 {
                     if(msg->name[i] == joint_name_)
                     {
-                        mesurement = msg->position[i];
+                        measurement = msg->position[i];
                         break;
                     }
                 }
@@ -127,7 +125,7 @@ Controller::on_configure(const rclcpp_lifecycle::State &)
                 {
                     if (msg->name[i] == joint_name_)
                     {
-                        mesurement = msg->effort[i];
+                        measurement = msg->effort[i];
                         break;
                     }
                 }
@@ -178,16 +176,7 @@ Controller::on_activate(const rclcpp_lifecycle::State &)
     return controller_interface::CallbackReturn::SUCCESS;
 }
 
-controller_interface::CallbackReturn
-Controller::on_deactivate(const rclcpp_lifecycle::State &)
-{
-    for(auto & interface : command_interfaces_)
-    {
-        (void) interface.set_value(0.0);
-    }
 
-    return controller_interface::CallbackReturn::SUCCESS;
-}
 
 controller_interface::return_type
 Controller::update(const rclcpp::Time &, const rclcpp::Duration & period)
@@ -201,8 +190,11 @@ Controller::update(const rclcpp::Time &, const rclcpp::Duration & period)
     double error = 0.0;
     double dt = period.seconds();
 
-    //calculo do erro e do comando PID 
-    error = reference - mesurement;
+    //converte radianos para graus 
+    double reference_deg   = reference * 180.0 / M_PI;
+    double measurement_deg = measurement * 180.0 / M_PI;
+
+    error = reference_deg - measurement_deg;
     command_ = pid_.compute_command(error, dt);
 
     // Limitar entre -1 e 1
@@ -213,20 +205,20 @@ Controller::update(const rclcpp::Time &, const rclcpp::Duration & period)
         RCLCPP_WARN(get_node()->get_logger(),"Falha a escrever stim_command de %s",joint_name_.c_str());
     }
 
-    double mesurement_data = 0.0;
+    double measurement_data = 0.0;
     double reference_data = 0.0;
 
     // Log the data to the CSV file
-    mesurement_data = mesurement;
+    measurement_data = measurement;
     reference_data = reference;
   
-    log_file_<< get_node()->now().seconds() << ","<< mesurement_data << ","<< reference_data << ","<< error << ","<< command_<< "\n";
+    log_file_<< get_node()->now().seconds() << ","<< measurement_data << ","<< reference_data << ","<< error << ","<< command_<< "\n";
 
     if(control_mode_ == "position")
     {
         RCLCPP_INFO(get_node()->get_logger(),"Joint: %s | Pos: %.3f | Ref: %.3f | Err: %.3f | PID: %.3f",
             joint_name_.c_str(),
-            mesurement,
+            measurement,
             reference,
             error,
             command_);
@@ -235,13 +227,29 @@ Controller::update(const rclcpp::Time &, const rclcpp::Duration & period)
     {
         RCLCPP_INFO(get_node()->get_logger(),"Joint: %s | Torque: %.3f | Ref: %.3f | Err: %.3f | PID: %.3f",
             joint_name_.c_str(),
-            mesurement,
+            measurement,
             reference,
             error,
             command_);
     }
 
     return controller_interface::return_type::OK;
+}
+
+controller_interface::CallbackReturn
+Controller::on_deactivate(const rclcpp_lifecycle::State &)
+{
+    for(auto & interface : command_interfaces_)
+    {
+        (void) interface.set_value(0.0);
+    }
+
+    if(log_file_.is_open())
+    {
+        log_file_.close();
+    }
+
+    return controller_interface::CallbackReturn::SUCCESS;
 }
 
 }

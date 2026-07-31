@@ -7,11 +7,11 @@
 namespace control_signals
 {
 
-class AngleEstimation_node : public rclcpp::Node
+class AngleEstimationNode : public rclcpp::Node
 {
 public:
 
-    AngleEstimation_node();
+    AngleEstimationNode();
 
 
 private:
@@ -24,7 +24,7 @@ private:
     rclcpp::TimerBase::SharedPtr
     timer_;
 
-    double time_;
+    double time_{0.0};
 };
 
 }

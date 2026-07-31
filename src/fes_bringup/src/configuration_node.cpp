@@ -82,8 +82,30 @@ namespace fes_bringup
         RCLCPP_INFO(get_logger(),"Activate coactivation? (Y/N):");
         configuration_.coactivation_enabled = getCoactivationEnabled();
 
+        //modulation
+        RCLCPP_INFO(get_logger(), "Select modulation mode:");
+      
+        RCLCPP_INFO(get_logger(), "1 - Pulse Width (PW) modulation");
+        RCLCPP_INFO(get_logger(), "2 - Pulse Amplitude (PA) modulation");
+
+        int modulation_mode = getModulationModeSelection();
+
+        switch (modulation_mode)
+        {
+        case 1:
+            configuration_.modulation_mode = "pw_modulation";
+            break;
+
+        case 2:
+            configuration_.modulation_mode = "pa_modulation";
+            break;
+        
+        default:
+            throw std::runtime_error("Invalid modulation mode selected");
+        }
+
        
-        // Perguntar ao utilizador
+        // joint selection
         RCLCPP_INFO(get_logger(), "Available joints:");
         
         RCLCPP_INFO(get_logger(), "1 - knee_left");
@@ -93,7 +115,6 @@ namespace fes_bringup
         RCLCPP_INFO(get_logger(), "5 - all.");
         RCLCPP_INFO(get_logger(), "0 - Finish selection.\n");
 
-
         
         while(!finished_selection)
         {
@@ -102,26 +123,44 @@ namespace fes_bringup
             switch(selected_joint)
             {
                 case 0:
+
                     finished_selection = true;
                     break;
-
+                
                 case 1:
-                    configuration_.joints.push_back("knee_left");
+
+                    if (std::find(configuration_.joints.begin(),configuration_.joints.end(),"knee_left") == configuration_.joints.end())
+                    {
+                        configuration_.joints.push_back("knee_left");
+                    }
                     break;
 
                 case 2:
-                    configuration_.joints.push_back("ankle_left");
+
+                    if (std::find(configuration_.joints.begin(),configuration_.joints.end(),"ankle_left") == configuration_.joints.end())
+                    {
+                        configuration_.joints.push_back("ankle_left");
+                    }
                     break;
 
                 case 3:
-                    configuration_.joints.push_back("knee_right");
+
+                    if (std::find(configuration_.joints.begin(),configuration_.joints.end(),"knee_right") == configuration_.joints.end())
+                    {
+                        configuration_.joints.push_back("knee_right");
+                    }
                     break;
 
                 case 4:
-                    configuration_.joints.push_back("ankle_right");
+
+                    if (std::find(configuration_.joints.begin(),configuration_.joints.end(),"ankle_right") == configuration_.joints.end())
+                    {
+                        configuration_.joints.push_back("ankle_right");
+                    }
                     break;
 
                 case 5:
+
                     configuration_.joints =
                     {
                         "knee_left",
@@ -156,13 +195,16 @@ namespace fes_bringup
 
         saveExperimentInfo();
 
+        configuration_publisher_->publish(configuration_);
+
+        // dá tempo ao DDS para entregar a mensagem
+        rclcpp::sleep_for(std::chrono::milliseconds(200));
+
         if (!activateSelectedControllers())
         {
             RCLCPP_ERROR(get_logger(), "Failed to activate controllers.");
             return;
         }
-
-        configuration_publisher_->publish(configuration_);
 
         RCLCPP_INFO(get_logger(), "Configuration published.");
         
@@ -206,10 +248,11 @@ namespace fes_bringup
             return false;
         }
 
-        if (!future.get()->ok)
-        {
-            RCLCPP_ERROR(get_logger(),"%s", future.get()->message.c_str());
+        auto response = future.get();
 
+        if (!response->ok)
+        {
+            RCLCPP_ERROR(get_logger(), "Failed: %s", response->message.c_str());
             return false;
         }
 
@@ -364,6 +407,26 @@ namespace fes_bringup
             RCLCPP_ERROR(get_logger(), "Invalid option.");
         }
     }
+
+    int ConfigurationNode::getModulationModeSelection()
+    {
+        int option;
+
+        while (true)
+        {
+            std::cout << "\nSelect option: ";
+
+            if (std::cin >> option && option >= 1 && option <= 2)
+            {
+                return option;
+            }
+
+            std::cin.clear();
+            std::cin.ignore(10000, '\n');
+
+            RCLCPP_ERROR(get_logger(), "Invalid option.");
+        }
+    }
     
     double ConfigurationNode::getGain(const std::string & name)
     {
@@ -429,9 +492,10 @@ namespace fes_bringup
         file << "Age: " << configuration_.age << "\n";
         file << "Height: " << configuration_.height << " cm\n";
         file << "Weight: " << configuration_.weight << " kg\n";
+        
     }
 
-    std::string ConfigurationNode::currentDate()
+    std::string ConfigurationNode::CurrentDate()
     {
         auto now = std::chrono::system_clock::now();
 
@@ -475,8 +539,7 @@ namespace fes_bringup
 
     void ConfigurationNode::createTrialDirectory()
     {
-        std::string date =
-            currentDate();
+        std::string date = CurrentDate();
 
         std::string date_directory =
             "logs/" +
@@ -499,13 +562,14 @@ namespace fes_bringup
 
     void ConfigurationNode::saveExperimentInfo()
     {
-        std::ofstream file(configuration_.log_directory +"/experiment_info.txt");
+        std::ofstream file(configuration_.log_directory + "/experiment_info.txt");
 
-        file << "Control mode: "<< configuration_.control_mode<< "\n\n";
+        file << "Control mode: " << configuration_.control_mode << "\n";
+        file << "Modulation mode: " << configuration_.modulation_mode << "\n\n";
 
         file << "Selected joints\n";
 
-        for(const auto & joint : configuration_.joints)
+        for (const auto & joint : configuration_.joints)
         {
             file << "- " << joint << "\n";
         }
@@ -520,10 +584,7 @@ namespace fes_bringup
 
         file << "\nCoactivation\n";
 
-        file << "Enabled: "<< (configuration_.coactivation_enabled ? "Yes" : "No")<< "\n";
-
-    
-
+        file << "Enabled: "<< (configuration_.coactivation_enabled ? "Yes" : "No") << "\n";
     }
 }
 

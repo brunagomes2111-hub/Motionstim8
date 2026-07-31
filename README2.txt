@@ -1,5 +1,9 @@
 ROS2 JAZZY
 
+Nota: Embora as trajetórias de referência sejam originalmente definidas em graus, o ROS 2 utiliza radianos nas mensagens
+ sensor_msgs/msg/JointState. Assim, a comunicação entre os nós é efetuada em radianos e, antes do cálculo do erro, os valores são 
+ convertidos para graus para preservar o comportamento do controlador PID original.
+
 Este ficheiro contem:
     -> explicação a fundo de todos os packages
     -> parâmetros
@@ -13,10 +17,10 @@ ros2_ws_2/src/
 │
 ├── control_signals -> package responsável pela geração das referências e estimação dos estados articulares
 │   ├── Angle_Estimation
-│   │   ├── AngleEstimation_node.cpp -> publica a posição atual das articulações (atualmente simulada através de uma sinusoide)
+│   │   ├── AngleEstimationNode.cpp -> publica a posição atual das articulações (atualmente simulada através de uma sinusoide)
 │   │   └── include
 │   │       └── control_signals
-│   │           └── AngleEstimation_node.hpp
+│   │           └── AngleEstimationNode.hpp
 │   ├── CMakeLists.txt
 │   ├── Generate_Reference
 │   │   ├── generate_reference_node.cpp -> publica as trajetórias de referência de posição e de torque
@@ -505,7 +509,7 @@ ros2_ws_2/src/
                 Recebe três vetores:
 
                     pulse_width;
-                    pulse_current;
+                    pa;
                     mode.
 
                 Estes parâmetros são enviados ao estimulador através da função Send_Update_Parameter() da stimlib.
