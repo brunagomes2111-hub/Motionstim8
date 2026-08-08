@@ -143,30 +143,28 @@ ros2_ws_2/src/
         -coativação
         - PW modulation ou PA modulation
 
-    O ConfigurationNode é ainda responsável por criar automaticamente a estrutura de diretórios dos ensaios e por ativar os controladores das articulações selecionadas através do controller_manager.
+    O ConfigurationNode é ainda responsável por criar automaticamente a estrutura de diretórios dos trials e por ativar os controladores das articulações selecionadas através do controller_manager.
 
 
 // control_signals pkg //
 
     É composto por três módulos:
 
-        - Generate_Reference -> gera e publica as trajetórias de referência de posição e de torque.
+        - Generate_Reference → gera e publica as trajetórias de referência de posição e de torque. As trajetórias de posição são armazenadas em graus e convertidas para radianos antes de serem publicadas.
 
-        - Angle_Estimation -> publica a posição atual das articulações (atualmente simulada através de uma sinusoide).
+        - Angle_Estimation → publica a posição atual das articulações (atualmente simulada através de uma sinusoide).
 
-        - Torque_Estimation -> publica ou estima o torque articular (atualmente simulada através de uma sinusoide).
-
+        - Torque_Estimation → publica ou estima o torque articular (atualmente simulada através de uma sinusoide).
 
 // fes_control pkg //
 
     Implementa o controlador do sistema como um plugin do ros2_control.
 
-    O controlador recebe a posição atual e a referência da articulação, calcula o erro e aplica um controlador PID.
+    O controlador recebe a referência e a medição da articulação, converte os valores de posição de radianos para graus e calcula o erro antes de aplicar o controlador PID.
 
     Atualmente encontra-se implementado o modo de controlo em posição e em torque.
 
-    O comando calculado é normalizado para o intervalo [-1,1] antes de ser enviado para a Hardware Interface.
-
+    O PID utiliza uma estratégia de anti-windup por integração condicional e a sua saída é limitada ao intervalo [-1,1] antes de ser enviada para a Hardware Interface.
 
 // motionstim8_hardware pkg //
 
@@ -175,10 +173,12 @@ ros2_ws_2/src/
     É responsável por:
 
         - exportar as state_interfaces e command_interfaces;
-        - converter os comandos normalizados provenientes do controlador em parâmetros de estimulação;
+        - receber os comandos normalizados do controlador no intervalo [-1,1] e convertê-los em parâmetros de estimulação;
         - determinar se a estimulação deve ser aplicada ao músculo responsável pela extensão ou pela flexão da articulação;
+        - suportar modulação por Pulse Width (PW) ou Pulse Amplitude (PA);
+        - calcular a coativação
+        - registar os parâmetros de estimulação num ficheiro CSV.
         - aplicar os limites de saturação;
-        - fazer a coativação
         - enviar os parâmetros de estimulação ao MotionStim8Driver.
 
 
@@ -226,7 +226,10 @@ ros2_ws_2/src/
             - articulações;
             - modo de controlo (Position/Torque);
             - ganhos PID;
-            - informações do paciente.
+            - ativação/desativação da coativação;
+            - modo de modulação (PW ou PA);
+            - informações do paciente;
+            - diretório dos resultados experimentais.
 
     Node: ConfigurationNode
 
@@ -287,7 +290,7 @@ ros2_ws_2/src/
 
                 Atualiza e publica, a 100 Hz, as trajetórias de referência de posição e de torque das articulações selecionadas.
 
-                As referências de posição são convertidas de graus para radianos antes de serem publicadas.
+               As referências de posição são convertidas de graus para radianos antes de serem publicadas, de acordo com a convenção do ROS 2.
 
     Angle_Estimation
 
@@ -317,7 +320,7 @@ ros2_ws_2/src/
 
         Função: timer_callback()
 
-            Calcula e publica o torque estimado das articulações no tópico /joint_torque, sendo esta informação utilizada pelo controlador no modo de controlo em torque.
+            Calcula e publica o torque estimado das articulações no tópico /joint_torques, sendo esta informação utilizada pelo controlador no modo de controlo em torque.
 
 // fes_control //
 
@@ -353,7 +356,7 @@ ros2_ws_2/src/
                 - seleciona o modo de controlo (Position ou Torque);
                 - cria os subscritores das referências e medições correspondentes ao modo selecionado;
                 - recebe os ganhos PID;
-                - inicializa o controlador PID e configura o mecanismo de anti-windup;
+                - inicializa o controlador PID com os ganhos recebidos e configura o anti-windup por integração condicional;
                 - cria o ficheiro CSV para registo dos resultados experimentais.
 
         Função: on_activate()
@@ -393,6 +396,7 @@ ros2_ws_2/src/
                     - lê os parâmetros gerais do hardware definidos no URDF;
                     - cria a configuração de estimulação de cada articulação;
                     - inicializa os vetores de comandos e estados.
+                    
 
             Função: on_configure()
 
@@ -405,6 +409,9 @@ ros2_ws_2/src/
                     - estabelece a comunicação série com o MotionStim8 (modo real);
                     - inicializa o estimulador;
                     - prepara a Hardware Interface para funcionamento.
+                    - recebe o modo de controlo e o modo de modulação através de /configuration;
+                    - recebe a posição atual das articulações através de /joint_position;
+                    - inicializa o ficheiro de registo da estimulação.
 
             Função: export_state_interfaces()
 
@@ -420,18 +427,21 @@ ros2_ws_2/src/
 
             Função: write()
 
-                Executada periodicamente pelo controller_manager (100 Hz).
+            Executada periodicamente pelo controller_manager (100 Hz).
 
-                Em cada ciclo:
+            Em cada ciclo:
 
-                    - lê o comando normalizado enviado pelo controlador;
-                    - converte o comando em Pulse Width para o músculo agonista;
-                    - calcula a Pulse Width do músculo antagonista quando a coativação está ativada;
-                    - aplica os pesos definidos para o PID e para a coativação;
-                    - limita as Pulse Width aos valores máximos configurados;
-                    - cria os vetores de Pulse Width, corrente e modo de estimulação;
-                    - em modo de simulação apresenta informação de depuração;
-                    - em modo real envia os parâmetros para o MotionStim8 através do MotionStim8Driver.
+                - lê o comando normalizado enviado pelo controlador e limita-o ao intervalo [-1,1];
+                - determina se a estimulação é aplicada ao músculo agonista ou antagonista;
+                - no modo PW, converte o comando normalizado em Pulse Width;
+                - no modo PA, converte o comando normalizado em Pulse Amplitude;
+                - calcula a coativação com base na posição articular quando o modo de controlo é Position;
+                - aplica os pesos definidos para o PID e para a coativação;
+                - aplica os limites máximos de Pulse Width ou Pulse Amplitude;
+                - cria os vetores de Pulse Width, Pulse Amplitude e modo de estimulação;
+                - em modo de simulação, calcula os parâmetros sem os enviar ao estimulador;
+                - em modo real, envia os parâmetros para o MotionStim8 através do MotionStim8Driver;
+                - regista os parâmetros de estimulação no ficheiro CSV.
 
             Função: read()
 
@@ -456,6 +466,10 @@ ros2_ws_2/src/
                     n_factor_	-> Fator de frequência utilizado pelo estimulador.
                     simulation_mode_ -> Indica se o hardware funciona em modo de simulação.
                     configured_	-> Indica se a Hardware Interface foi corretamente configurada e inicializada.
+                    coactivation_enabled_ -> Indica se a coativação está ativada.
+                    control_mode_ -> Modo de controlo selecionado (Position ou Torque).
+                    modulation_mode_ -> Modo de modulação selecionado (PW ou PA).
+                    joint_position_ -> Posições articulares utilizadas no cálculo da coativação.
 
 // motionstim8_driver //
 
@@ -509,7 +523,7 @@ ros2_ws_2/src/
                 Recebe três vetores:
 
                     pulse_width;
-                    pa;
+                    pulse_amplitude;
                     mode.
 
                 Estes parâmetros são enviados ao estimulador através da função Send_Update_Parameter() da stimlib.
@@ -539,5 +553,10 @@ ros2_ws_2/src/
              
                 stim_	-> Instância da biblioteca stimlib, utilizada para comunicar diretamente com o MotionStim8.
                 connected_	-> Indica se existe uma ligação ativa com o estimulador.
+
+            Antes do envio são verificadas as gamas de segurança:
+
+                - Pulse Width: [0,500] µs;
+                - Pulse Amplitude: [0,127] mA.
 
 
